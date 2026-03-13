@@ -1,0 +1,2334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>OT Tracker</title>
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#C17D3C">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="OT Tracker">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<style>
+:root {
+  --bg: #F7F5F0;
+  --bg2: #EDEAE3;
+  --bg3: #E2DED6;
+  --surface: #FFFFFF;
+  --border: rgba(0,0,0,0.08);
+  --border2: rgba(0,0,0,0.14);
+  --text: #1A1814;
+  --text2: #6B6760;
+  --text3: #9E9B97;
+  --accent: #C17D3C;
+  --accent-light: #F5EBE0;
+  --accent-dark: #8F5A27;
+  --green: #3A7D44;
+  --green-light: #E8F4EA;
+  --red: #C0392B;
+  --red-light: #FDECEA;
+  --blue: #2C5F8A;
+  --blue-light: #E8F0F8;
+  --amber: #B07D2E;
+  --amber-light: #FDF3E3;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+[data-theme="dark"] {
+  --bg: #141210;
+  --bg2: #1E1C19;
+  --bg3: #262420;
+  --surface: #1E1C19;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #F0EDE8;
+  --text2: #9E9B97;
+  --text3: #6B6760;
+  --accent: #D4924E;
+  --accent-light: #2A1F12;
+  --accent-dark: #E8A86A;
+  --green: #4CAF5C;
+  --green-light: #0F2213;
+  --red: #E05444;
+  --red-light: #2A0F0D;
+  --blue: #5B9BD5;
+  --blue-light: #0D1E2E;
+  --amber: #D4A94E;
+  --amber-light: #231A08;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background .2s,color .2s}
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+
+/* Sidebar */
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:24px 0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{padding:0 20px 24px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.logo-mark{font-family:'Courier New',Courier,monospace;font-size:11px;font-weight:500;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px}
+.logo-name{font-size:17px;font-weight:600;color:var(--text)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);transition:all .15s;border-left:2px solid transparent;margin:1px 0}
+.nav-item:hover{color:var(--text);background:var(--bg3)}
+.nav-item.active{color:var(--accent);border-left-color:var(--accent);background:var(--accent-light)}
+.nav-icon{width:16px;height:16px;opacity:.7}
+.nav-item.active .nav-icon{opacity:1}
+.sidebar-bottom{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border)}
+.theme-toggle{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer;padding:6px 8px;border-radius:var(--radius);transition:background .15s}
+.theme-toggle:hover{background:var(--bg3)}
+.toggle-track{width:32px;height:18px;background:var(--bg3);border:1px solid var(--border2);border-radius:9px;position:relative;transition:background .2s}
+.toggle-thumb{width:12px;height:12px;background:var(--text2);border-radius:50%;position:absolute;top:2px;left:2px;transition:all .2s}
+[data-theme="dark"] .toggle-track{background:var(--accent)}
+[data-theme="dark"] .toggle-thumb{left:16px;background:#fff}
+
+/* Main */
+.main{padding:28px 32px;overflow-y:auto}
+.page{display:none}
+.page.active{display:block}
+.page-header{margin-bottom:24px}
+.page-header h1{font-size:22px;font-weight:600;color:var(--text)}
+.page-header p{font-size:13px;color:var(--text2);margin-top:3px}
+
+/* Clock bar */
+.clock-bar{display:flex;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 20px;margin-bottom:20px;box-shadow:var(--shadow)}
+.clock-time{font-family:'Courier New',Courier,monospace;font-size:28px;font-weight:400;color:var(--text);letter-spacing:-1px}
+.clock-date{font-size:13px;color:var(--text2);margin-top:2px}
+.clock-sep{width:1px;height:40px;background:var(--border2)}
+.status-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500}
+.status-pill.in{background:var(--green-light);color:var(--green)}
+.status-pill.out{background:var(--bg2);color:var(--text2)}
+.dot{width:6px;height:6px;border-radius:50%}
+.dot.in{background:var(--green)}
+.dot.out{background:var(--text3)}
+.clock-actions{margin-left:auto;display:flex;gap:8px}
+
+/* Metrics grid */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.metric-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow)}
+.metric-label{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+.metric-value{font-family:'Courier New',Courier,monospace;font-size:22px;font-weight:400;color:var(--text)}
+.metric-value.accent{color:var(--accent)}
+.metric-value.green{color:var(--green)}
+.metric-value.red{color:var(--red)}
+.metric-value.blue{color:var(--blue)}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:4px}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px;box-shadow:var(--shadow)}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:13px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.card-action{font-size:12px;color:var(--accent);cursor:pointer;font-weight:500}
+.card-action:hover{color:var(--accent-dark)}
+
+/* Buttons */
+.btn{padding:8px 16px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;border:1px solid var(--border2);background:transparent;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif}
+.btn:hover{background:var(--bg2)}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.primary:hover{background:var(--accent-dark);border-color:var(--accent-dark)}
+.btn.success{background:var(--green);color:#fff;border-color:var(--green)}
+.btn.success:hover{opacity:.9}
+.btn.danger{background:var(--red);color:#fff;border-color:var(--red)}
+.btn.danger:hover{opacity:.9}
+.btn.sm{padding:5px 10px;font-size:12px}
+
+/* Form */
+.form-row{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.form-field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:120px}
+.form-field label{font-size:12px;font-weight:500;color:var(--text2)}
+.form-field input,.form-field select,.form-field textarea{padding:8px 12px;border:1px solid var(--border2);border-radius:var(--radius);font-size:13px;background:var(--bg2);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif;transition:border .15s;outline:none}
+.form-field input:focus,.form-field select:focus{border-color:var(--accent);background:var(--surface)}
+.form-field select option{background:var(--surface)}
+
+/* Table */
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table th{text-align:left;padding:8px 12px;font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
+.data-table td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:var(--bg2)}
+.data-table td.ot{color:var(--accent);font-family:'Courier New',Courier,monospace;font-weight:500}
+.data-table td.mono{font-family:'Courier New',Courier,monospace;font-size:12px}
+.empty-row td{text-align:center;color:var(--text3);padding:24px}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:500;letter-spacing:.2px}
+.badge.approved{background:var(--green-light);color:var(--green)}
+.badge.pending{background:var(--amber-light);color:var(--amber)}
+.badge.rejected{background:var(--red-light);color:var(--red)}
+.badge.flag{background:var(--red-light);color:var(--red)}
+
+/* Tags */
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;background:var(--accent-light);color:var(--accent-dark);margin:2px}
+
+/* Progress bar */
+.progress-bar{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;border-radius:3px;transition:width .4s}
+
+/* Charts */
+.chart-container{position:relative;height:220px;margin-top:8px}
+/* Safe area insets for notched Android/iPhone */
+.sidebar{padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+.main{padding-bottom:env(safe-area-inset-bottom,0px)}
+
+/* OT Request list */
+.request-item{display:flex;align-items:flex-start;gap:12px;padding:14px;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;transition:border .15s}
+.request-item:hover{border-color:var(--border2)}
+.request-date{font-family:'Courier New',Courier,monospace;font-size:12px;color:var(--text3);min-width:80px}
+.request-body{flex:1}
+.request-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px}
+.request-meta{font-size:12px;color:var(--text2)}
+.request-actions{display:flex;gap:6px;flex-shrink:0}
+
+/* Approved OT banner */
+.ot-banner{display:flex;align-items:center;gap:16px;padding:14px 18px;background:var(--accent-light);border:1px solid rgba(193,125,60,.2);border-radius:var(--radius-lg);margin-bottom:16px}
+.ot-banner-label{font-size:13px;color:var(--accent-dark);font-weight:500;flex:1}
+.ot-banner-val{font-family:'Courier New',Courier,monospace;font-size:20px;color:var(--accent);font-weight:400}
+
+/* Summary tabs */
+.tab-row{display:flex;gap:4px;margin-bottom:16px;background:var(--bg2);padding:4px;border-radius:var(--radius);width:fit-content}
+.tab{padding:6px 16px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);transition:all .15s;border:none;background:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif}
+.tab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+
+/* Responsive */
+@media(max-width:768px){
+  .app{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .metrics{grid-template-columns:repeat(2,1fr)}
+}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.divider{height:1px;background:var(--border);margin:16px 0}
+
+/* Notification / attendance prompt bar */
+#notif-bar{display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:var(--surface);border-bottom:1px solid var(--border2);box-shadow:0 2px 12px rgba(0,0,0,.08);padding:0}
+.notif-inner{max-width:700px;margin:0 auto;padding:14px 20px}
+.notif-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.notif-days{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;margin-bottom:10px}
+.notif-day-row{display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--bg2);border-radius:var(--radius-md);font-size:13px}
+.notif-day-label{flex:1;color:var(--text);font-weight:500}
+.notif-day-sub{font-size:11px;color:var(--text3);margin-left:4px}
+.notif-actions{display:flex;gap:6px;margin-left:auto}
+.notif-footer{display:flex;gap:8px;justify-content:flex-end;padding-top:8px;border-top:1px solid var(--border)}
+
+/* Approval inline panel */
+.approve-panel{background:var(--green-light);border:1px solid var(--green);border-radius:var(--radius);padding:12px 14px;margin-top:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.approve-panel label{font-size:12px;font-weight:500;color:var(--green)}
+.approve-panel input{padding:6px 10px;border:1px solid var(--green);border-radius:var(--radius);font-size:13px;background:var(--surface);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif;outline:none;width:80px}
+.approve-panel input:focus{box-shadow:0 0 0 2px rgba(58,125,68,.2)}
+.approve-panel select{padding:6px 10px;border:1px solid var(--green);border-radius:var(--radius);font-size:13px;background:var(--surface);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif;outline:none}
+.approved-amount{font-size:12px;color:var(--green);font-weight:500;background:var(--green-light);padding:2px 8px;border-radius:4px;border:1px solid var(--green)}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Attendance prompt notification bar -->
+  <div id="notif-bar">
+    <div class="notif-inner">
+      <div class="notif-title">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6.5" stroke="var(--amber)" stroke-width="1.4"/><line x1="7.5" y1="4.5" x2="7.5" y2="8" stroke="var(--amber)" stroke-width="1.4" stroke-linecap="round"/><circle cx="7.5" cy="10.5" r=".8" fill="var(--amber)"/></svg>
+        <span id="notif-title-text">Mark missed days</span>
+        <span id="notif-month-label" style="font-size:11px;color:var(--text3);font-weight:400"></span>
+      </div>
+      <div class="notif-days" id="notif-days-list"></div>
+      <div class="notif-footer">
+        <button class="btn sm" onclick="dismissNotif()">Dismiss</button>
+        <button class="btn sm primary" onclick="applyNotifDecisions()">Apply &amp; refresh</button>
+      </div>
+    </div>
+  </div>
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">OT Tracker</div>
+      <div class="logo-name">My Office</div>
+    </div>
+    <nav>
+      <div class="nav-item active" onclick="showPage('dashboard')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item" onclick="showPage('log')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="1" width="12" height="14" rx="1.5"/><line x1="5" y1="5" x2="11" y2="5"/><line x1="5" y1="8" x2="11" y2="8"/><line x1="5" y1="11" x2="9" y2="11"/></svg>
+        Time Log
+      </div>
+      <div class="nav-item" onclick="showPage('requests')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><line x1="8" y1="5" x2="8" y2="8"/><line x1="8" y1="11" x2="8.01" y2="11"/></svg>
+        OT Requests
+        <span id="pending-badge" style="margin-left:auto;background:var(--amber);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;display:none"></span>
+      </div>
+      <div class="nav-item" onclick="showPage('summary')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,12 5,7 8,10 11,5 15,8"/></svg>
+        Summary
+      </div>
+      <div class="nav-item" onclick="showPage('calendar')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="12" rx="1.5"/><line x1="1" y1="7" x2="15" y2="7"/><line x1="5" y1="1" x2="5" y2="5"/><line x1="11" y1="1" x2="11" y2="5"/></svg>
+        Nepali Calendar
+      </div>
+      <div class="nav-item" onclick="showPage('payslips')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="1" width="12" height="14" rx="1.5"/><line x1="5" y1="5" x2="11" y2="5"/><line x1="5" y1="8" x2="11" y2="8"/><line x1="5" y1="11" x2="8" y2="11"/><circle cx="11" cy="11" r="2.5"/><line x1="9.8" y1="12.2" x2="13" y2="14"/></svg>
+        Payslips
+      </div>
+      <div class="nav-item" onclick="showPage('settings')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg>
+        Settings
+      </div>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="theme-toggle" onclick="toggleTheme()">
+        <div class="toggle-track"><div class="toggle-thumb"></div></div>
+        <span id="theme-label">Light mode</span>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page active">
+      <div class="page-header">
+        <h1>Dashboard</h1>
+        <p id="greeting">Good morning</p>
+      </div>
+      <div class="clock-bar">
+        <div>
+          <div class="clock-time" id="clock">00:00:00</div>
+          <div class="clock-date" id="clock-date"></div>
+        </div>
+        <div class="clock-sep"></div>
+        <div id="checkin-status" class="status-pill out"><span class="dot out"></span> Not checked in</div>
+        <div class="clock-actions">
+          <button class="btn success" onclick="checkInNow()">Check in</button>
+          <button class="btn" onclick="quickCheckout()">Check out</button>
+        </div>
+      </div>
+
+      <div id="ot-approved-banner" style="display:none" class="ot-banner">
+        <span class="ot-banner-label">Approved OT budget</span>
+        <span class="ot-banner-val" id="banner-approved">0h</span>
+        <div style="flex:2">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--accent-dark);margin-bottom:4px">
+            <span id="banner-used">Used: 0h</span><span id="banner-remain">Remaining: 0h</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" id="banner-progress" style="background:var(--accent);width:0%"></div></div>
+        </div>
+      </div>
+
+      <div class="metrics">
+        <div class="metric-card">
+          <div class="metric-label">Today worked</div>
+          <div class="metric-value" id="m-today">0h 0m</div>
+          <div class="metric-sub" id="m-today-sub">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Today OT</div>
+          <div class="metric-value accent" id="m-ot-today">0h 0m</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Month OT</div>
+          <div class="metric-value accent" id="m-ot-month">0h 0m</div>
+          <div class="metric-sub" id="m-ot-month-label"></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Carry-over</div>
+          <div class="metric-value blue" id="m-carryover">0h</div>
+          <div class="metric-sub">from prev. month</div>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">This week</span><span class="card-action" onclick="showPage('summary')">View all →</span></div>
+          <div class="chart-container"><canvas id="chart-week"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Monthly OT</span><span class="card-action" onclick="showPage('summary')">View all →</span></div>
+          <div class="chart-container"><canvas id="chart-month"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Recent entries</span><span class="card-action" onclick="showPage('log')">All entries →</span></div>
+        <table class="data-table" id="recent-table">
+          <thead><tr><th>Date</th><th>In</th><th>Out</th><th>Worked</th><th>OT</th><th>Status</th></tr></thead>
+          <tbody id="recent-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TIME LOG -->
+    <div id="page-log" class="page">
+      <div class="page-header">
+        <h1>Time Log</h1>
+        <p>Add and manage your time entries</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Add entry</span></div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Date (AD) <span id="log-date-bs" style="font-size:11px;color:var(--accent);font-weight:500;margin-left:6px"></span></label>
+            <input type="date" id="log-date" oninput="document.getElementById('log-date-bs').textContent=this.value?bsDateDisplay(this.value):''">
+          </div>
+          <div class="form-field"><label>Check-in</label><input type="time" id="log-cin"></div>
+          <div class="form-field"><label>Check-out</label><input type="time" id="log-cout"></div>
+          <div class="form-field" style="max-width:100px"><label>Shift (hrs)</label><input type="number" id="log-shift" value="8" min="1" max="24" step="0.5"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>Note</label><input type="text" id="log-note" placeholder="e.g. Project deadline"></div>
+          <div class="form-field"><label>Tags (comma separated)</label><input type="text" id="log-tags" placeholder="e.g. project-x, urgent"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn primary" onclick="addLogEntry()">Add entry</button>
+          <button class="btn" onclick="exportCSV()">Export CSV</button>
+          <button class="btn" onclick="exportPDF()">Export PDF</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">All entries</span>
+          <span style="font-size:12px;color:var(--text3)" id="log-count"></span>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>Date</th><th>In</th><th>Out</th><th>Worked</th><th>OT</th><th>Tags</th><th>Note</th><th></th></tr></thead>
+          <tbody id="log-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- OT REQUESTS -->
+    <div id="page-requests" class="page">
+      <div class="page-header">
+        <h1>OT Requests</h1>
+        <p>Select a day you worked OT and send for approval</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">New OT request</span></div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Date <span id="req-date-bs" style="font-size:11px;color:var(--accent);font-weight:500;margin-left:6px"></span></label>
+            <input type="date" id="req-date" oninput="reqDateChanged(this.value)">
+          </div>
+          <div class="form-field" style="max-width:160px">
+            <label>OT that day</label>
+            <div id="req-ot-preview" style="padding:8px 12px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg2);font-size:13px;color:var(--text3);min-height:36px;display:flex;align-items:center">Pick a date</div>
+          </div>
+          <div class="form-field">
+            <label>Reason</label>
+            <input type="text" id="req-reason" placeholder="Brief description">
+          </div>
+          <div class="form-field">
+            <label>Note</label>
+            <input type="text" id="req-notes" placeholder="Additional details for your superior">
+          </div>
+        </div>
+        <button class="btn primary" onclick="addRequest()">Submit request</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Current month OT budget</span></div>
+        <div id="ot-budget-summary" style="font-size:13px;color:var(--text2)">Submit and approve OT requests to see the budget here.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Requests</span></div>
+        <div id="requests-list"></div>
+      </div>
+    </div>
+
+    <!-- SUMMARY -->
+    <div id="page-summary" class="page">
+      <div class="page-header">
+        <h1>Summary</h1>
+        <p>Weekly and monthly OT breakdown</p>
+      </div>
+      <div class="tab-row">
+        <button class="tab active" onclick="setSummaryTab('weekly',this)">Weekly</button>
+        <button class="tab" onclick="setSummaryTab('monthly',this)">Monthly</button>
+      </div>
+      <div id="summary-weekly">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Weekly OT — last 8 weeks</span></div>
+          <div class="chart-container" style="height:260px"><canvas id="chart-weekly-summary"></canvas></div>
+        </div>
+        <div class="card" id="weekly-breakdown">
+          <div class="card-header"><span class="card-title">This week breakdown</span></div>
+          <table class="data-table">
+            <thead><tr><th>Day</th><th>Worked</th><th>Regular</th><th>OT</th></tr></thead>
+            <tbody id="weekly-breakdown-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="summary-monthly" style="display:none">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Monthly OT — last 6 months</span></div>
+          <div class="chart-container" style="height:260px"><canvas id="chart-monthly-summary"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Monthly breakdown</span></div>
+          <table class="data-table">
+            <thead><tr><th>Month</th><th>Total worked</th><th>OT hours</th><th>Approved</th><th>Balance</th></tr></thead>
+            <tbody id="monthly-breakdown-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="page-settings" class="page">
+      <div class="page-header"><h1>Settings</h1><p>Configure your tracker</p></div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Work schedule</span></div>
+        <div class="form-row">
+          <div class="form-field"><label>Default shift (hours)</label><input type="number" id="set-shift" value="8" min="1" max="16" step="0.5"></div>
+          <div class="form-field"><label>Work days per week</label>
+            <select id="set-days">
+              <option value="5">5 days (Mon–Fri)</option>
+              <option value="6">6 days (Mon–Sat)</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn primary" onclick="saveSettings()">Save settings</button>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Data</span></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" onclick="exportCSV()">Export CSV</button>
+          <button class="btn" onclick="exportPDF()">Export PDF</button>
+          <button class="btn danger" onclick="clearData()">Clear all data</button>
+        </div>
+      </div>
+    </div>
+    <!-- NEPALI CALENDAR -->
+    <div id="page-calendar" class="page">
+      <div class="page-header">
+        <h1>Nepali Calendar</h1>
+        <p>Bikram Sambat — fully offline with holidays &amp; events</p>
+      </div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
+        <!-- Main calendar -->
+        <div style="flex:1;min-width:320px">
+          <div class="card">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+              <button class="btn" onclick="calNav(-1)" style="padding:6px 12px">&#8592;</button>
+              <span id="cal-title" style="font-size:15px;font-weight:600;flex:1;text-align:center"></span>
+              <button class="btn" onclick="calNav(1)" style="padding:6px 12px">&#8594;</button>
+              <button class="btn sm" onclick="calGoToday()">Today</button>
+            </div>
+            <div id="cal-grid"></div>
+            <div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--text3)">
+              <span><span style="display:inline-block;width:9px;height:9px;background:var(--accent-light);border:1px solid var(--accent);border-radius:2px;margin-right:3px;vertical-align:middle"></span>Today</span>
+              <span><span style="display:inline-block;width:9px;height:9px;background:var(--green-light);border:1px solid var(--green);border-radius:2px;margin-right:3px;vertical-align:middle"></span>Checked in</span>
+              <span><span style="display:inline-block;width:9px;height:9px;background:var(--red-light);border:1px solid var(--red);border-radius:2px;margin-right:3px;vertical-align:middle"></span>Holiday</span>
+              <span style="color:var(--red)">Sun = day off</span>
+            </div>
+          </div>
+        </div>
+        <!-- Side panel: today info + upcoming -->
+        <div style="width:260px;flex-shrink:0">
+          <div class="card" style="margin-bottom:12px">
+            <div id="cal-today-panel"></div>
+          </div>
+          <div class="card">
+            <div style="font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Upcoming holidays</div>
+            <div id="cal-upcoming"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAYSLIPS -->
+    <div id="page-payslips" class="page">
+      <div class="page-header">
+        <h1>Payslips</h1>
+        <p>Store your monthly salary payslips matching your office format</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Employee & period</span></div>
+        <div class="form-row">
+          <div class="form-field"><label>Employee name</label><input type="text" id="ps-emp" placeholder="e.g. Rishikesh Dhakal"></div>
+          <div class="form-field" style="max-width:130px"><label>Employee ID</label><input type="text" id="ps-empid" placeholder="e.g. 00492"></div>
+          <div class="form-field"><label>Designation</label><input type="text" id="ps-desig" placeholder="e.g. Customer Service Rep"></div>
+          <div class="form-field"><label>Department</label><input type="text" id="ps-dept" placeholder="e.g. Customer Service"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>Office</label><input type="text" id="ps-office" placeholder="e.g. FMD Kathmandu Office"></div>
+          <div class="form-field" style="max-width:160px"><label>Employment type</label>
+            <select id="ps-emptype"><option>Contract</option><option>Permanent</option><option>Part-time</option><option>Intern</option></select>
+          </div>
+          <div class="form-field" style="max-width:130px"><label>Bank account</label><input type="text" id="ps-bank" placeholder="Account no."></div>
+          <div class="form-field" style="max-width:110px"><label>PAN No</label><input type="text" id="ps-pan" placeholder=""></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field" style="max-width:160px"><label>Month (BS)</label>
+            <select id="ps-month" onchange="psAutoFillAttendance()">
+              <option value="1">Baishakh</option><option value="2">Jestha</option><option value="3">Ashadh</option>
+              <option value="4">Shrawan</option><option value="5">Bhadra</option><option value="6">Ashwin</option>
+              <option value="7">Kartik</option><option value="8">Mangsir</option><option value="9">Poush</option>
+              <option value="10">Magh</option><option value="11">Falgun</option><option value="12">Chaitra</option>
+            </select>
+          </div>
+          <div class="form-field" style="max-width:110px"><label>BS Year</label><input type="number" id="ps-year" placeholder="2082" min="2070" max="2095" onchange="psAutoFillAttendance()"></div>
+          <div class="form-field" style="max-width:110px"><label>Daily hours</label><input type="number" id="ps-dailyhrs" placeholder="9.0" value="9" step="0.5"></div>
+          <div class="form-field" style="max-width:110px"><label>Total days</label><input type="number" id="ps-totaldays" placeholder="29" step="1"></div>
+          <div class="form-field" style="max-width:110px"><label>Salary days</label><input type="number" id="ps-salarydays" placeholder="29" step="1"></div>
+          <div class="form-field" style="max-width:110px"><label>Allowed days</label><input type="number" id="ps-alloweddays" placeholder="29" step="1"></div>
+        </div>
+
+        <!-- Live Attendance Counter -->
+        <div style="background:var(--bg2);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:12px;border:1px solid var(--border)">
+          <div style="font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Auto attendance — from your check-in logs</div>
+          <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px">
+            <div style="background:var(--surface);border-radius:var(--radius-md);padding:10px;text-align:center">
+              <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Present</div>
+              <div id="att-present" style="font-size:22px;font-weight:500;color:var(--green);font-family:'Courier New',Courier,monospace">0</div>
+            </div>
+            <div style="background:var(--surface);border-radius:var(--radius-md);padding:10px;text-align:center">
+              <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Holiday</div>
+              <div id="att-holiday" style="font-size:22px;font-weight:500;color:var(--blue);font-family:'Courier New',Courier,monospace">0</div>
+            </div>
+            <div style="background:var(--surface);border-radius:var(--radius-md);padding:10px;text-align:center">
+              <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Leave</div>
+              <div id="att-leave" style="font-size:22px;font-weight:500;color:var(--amber);font-family:'Courier New',Courier,monospace">0</div>
+            </div>
+            <div style="background:var(--surface);border-radius:var(--radius-md);padding:10px;text-align:center">
+              <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Absent</div>
+              <div id="att-absent" style="font-size:22px;font-weight:500;color:var(--red);font-family:'Courier New',Courier,monospace">0</div>
+            </div>
+            <div style="background:var(--surface);border-radius:var(--radius-md);padding:10px;text-align:center">
+              <div style="font-size:11px;color:var(--text3);margin-bottom:4px">OT hours</div>
+              <div id="att-ot" style="font-size:22px;font-weight:500;color:var(--accent);font-family:'Courier New',Courier,monospace">0</div>
+            </div>
+          </div>
+          <div style="margin-top:10px;font-size:11px;color:var(--text3);display:flex;align-items:center;gap:8px">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.2"/><line x1="6" y1="4" x2="6" y2="6.5" stroke="currentColor" stroke-width="1.2"/><circle cx="6" cy="8.5" r=".6" fill="currentColor"/></svg>
+            1 missed day/week → Holiday. 2+ missed days/week → you choose Leave or Absent per day.
+          </div>
+          <button class="btn sm" style="margin-top:8px" onclick="psAutoFillAttendance()">↻ Refresh & auto-fill</button>
+        </div>
+
+        <div class="form-row">
+          <div class="form-field" style="max-width:110px">
+            <label>Present days</label>
+            <input type="number" id="ps-presentdays" placeholder="0" step="1">
+          </div>
+          <div class="form-field" style="max-width:110px">
+            <label>Leave days</label>
+            <input type="number" id="ps-leave" value="0" step="1">
+          </div>
+          <div class="form-field" style="max-width:110px">
+            <label>Absent days</label>
+            <input type="number" id="ps-absent" value="0" step="0.5">
+          </div>
+          <div class="form-field" style="max-width:110px">
+            <label>Holidays</label>
+            <input type="number" id="ps-holidays" value="0" step="0.5">
+          </div>
+          <div class="form-field" style="max-width:110px">
+            <label>OT hours</label>
+            <input type="number" id="ps-ot-hrs" value="0" step="0.5">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Income</span></div>
+        <div class="form-row">
+          <div class="form-field"><label>Basic salary (NPR)</label><input type="number" id="ps-basic" placeholder="0" min="0" step="0.01" oninput="psCalcNet()"></div>
+          <div class="form-field"><label>Dearness allowance</label><input type="number" id="ps-da" placeholder="0" min="0" step="0.01" oninput="psCalcNet()"></div>
+          <div class="form-field"><label>SSF contribution</label><input type="number" id="ps-ssf-contrib" placeholder="0" min="0" step="0.01" oninput="psCalcNet()"></div>
+          <div class="form-field"><label>Night/Morning allowance</label><input type="number" id="ps-night" placeholder="0" min="0" step="0.01" oninput="psCalcNet()"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>Saturday allowance</label><input type="number" id="ps-sat" placeholder="0" min="0" step="0.01" oninput="psCalcNet()"></div>
+          <div class="form-field"><label>Over time pay</label><input type="number" id="ps-ot-pay" placeholder="0" min="0" step="0.01" oninput="psCalcNet()"></div>
+          <div class="form-field"><label>Leave payment</label><input type="number" id="ps-leavepay" placeholder="0" min="0" step="0.01" oninput="psCalcNet()"></div>
+          <div class="form-field"><label>Other income</label><input type="number" id="ps-otherincome" placeholder="0" min="0" step="0.01" oninput="psCalcNet()"></div>
+        </div>
+        <div style="padding:8px 0;font-size:13px;color:var(--text2)">Gross salary: <strong id="ps-gross" style="color:var(--text);font-size:15px">NPR 0.00</strong></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Deductions</span></div>
+        <div class="form-row">
+          <div class="form-field"><label>SSF deduction</label><input type="number" id="ps-ssf-ded" placeholder="0" min="0" step="0.01" oninput="psCalcNet()"></div>
+          <div class="form-field"><label>Loss order deduction</label><input type="number" id="ps-loss" placeholder="0" min="0" step="0.01" oninput="psCalcNet()"></div>
+          <div class="form-field"><label>Lunch deduction</label><input type="number" id="ps-lunch" placeholder="0" min="0" step="0.01" oninput="psCalcNet()"></div>
+          <div class="form-field"><label>TDS</label><input type="number" id="ps-tds" placeholder="0" min="0" step="0.01" oninput="psCalcNet()"></div>
+          <div class="form-field"><label>Other deductions</label><input type="number" id="ps-otherded" placeholder="0" min="0" step="0.01" oninput="psCalcNet()"></div>
+        </div>
+        <div style="padding:8px 0;font-size:13px;color:var(--text2)">Total deduction: <strong id="ps-totaldedshow" style="color:var(--red);font-size:15px">NPR 0.00</strong></div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;padding:14px 18px;background:var(--green-light);border:1px solid var(--green);border-radius:var(--radius-lg)">
+        <span style="font-size:14px;color:var(--green);font-weight:500;flex:1">Net Salary (Cash in Hand)</span>
+        <span id="ps-preview" style="font-size:22px;font-weight:500;color:var(--green);font-family:'Courier New',Courier,monospace">NPR 0.00</span>
+        <button class="btn primary" onclick="addPayslip()">Save payslip</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Saved payslips</span>
+          <span class="card-action" onclick="exportPayslipsCSV()">Export CSV</span>
+        </div>
+        <div id="payslips-list"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+var state = {
+  entries: [],
+  requests: [],
+  payslips: [],
+  approvedOT: 0,
+  carryover: 0,
+  settings: { shift: 8, days: 5 },
+  checkinTime: null,
+  theme: 'light',
+  attendanceOverrides: {}
+};
+
+function load() {
+  try {
+    var s = localStorage.getItem('ot_state_v2');
+    if (s) state = Object.assign(state, JSON.parse(s));
+    if (state.theme === 'dark') document.documentElement.setAttribute('data-theme','dark');
+    document.getElementById('theme-label').textContent = state.theme === 'dark' ? 'Dark mode' : 'Light mode';
+  } catch(e){}
+}
+function save() { localStorage.setItem('ot_state_v2', JSON.stringify(state)); }
+
+function fmt(mins) {
+  mins = Math.abs(mins);
+  return Math.floor(mins/60)+'h '+Math.round(mins%60)+'m';
+}
+function fmtH(h) { return h.toFixed(1)+'h'; }
+function timeDiff(a, b) {
+  var am = parseInt(a)*60+parseInt(a.split(':')[1]);
+  var bm = parseInt(b)*60+parseInt(b.split(':')[1]);
+  if(bm<am) bm+=1440;
+  return bm-am;
+}
+function getOT(entry) { return Math.max(0, entry.worked - (entry.shift*60)); }
+function totalOTMins(entries) { return entries.reduce(function(s,e){ return s+getOT(e); },0); }
+
+/* ── Bikram Sambat conversion engine ── */
+var BS_MONTHS_NAME = ['Baishakh','Jestha','Ashadh','Shrawan','Bhadra','Ashwin','Kartik','Mangsir','Poush','Magh','Falgun','Chaitra'];
+var BS_MONTHS_SHORT = ['Bai','Jes','Ash','Shr','Bha','Ash','Kar','Man','Pou','Mag','Fal','Cha'];
+var BS_DAYS_NAME = ['Aaitabar','Sombar','Mangalbar','Budhabar','Bihibar','Sukrabar','Sanibar'];
+var BS_DATA = {
+  2000:[30,32,31,32,31,30,30,30,29,30,29,31],2001:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2002:[31,31,32,32,31,30,30,29,30,29,30,30],2003:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2004:[30,32,31,32,31,30,30,30,29,30,29,31],2005:[31,31,32,31,31,30,30,30,29,30,29,31],
+  2006:[31,31,32,31,31,30,30,30,29,30,29,31],2007:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2008:[31,31,32,31,31,31,30,29,30,29,30,30],2009:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2010:[31,32,31,32,30,31,30,29,30,29,30,30],2011:[31,32,31,32,31,30,30,29,30,29,30,30],
+  2012:[31,32,31,32,31,30,30,30,29,29,30,31],2013:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2014:[31,31,32,31,31,30,30,30,29,30,29,31],2015:[31,31,32,31,31,30,30,30,29,30,29,31],
+  2016:[31,32,31,32,31,30,30,30,29,30,29,31],2017:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2018:[31,31,32,31,31,31,30,29,30,29,30,30],2019:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2020:[31,32,31,32,30,31,30,29,30,29,30,30],2021:[31,32,31,32,31,30,30,29,30,29,30,30],
+  2022:[31,32,31,32,31,30,30,30,29,29,30,31],2023:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2024:[31,31,32,31,31,30,30,30,29,30,29,31],2025:[31,31,32,31,31,30,30,30,29,30,29,31],
+  2026:[31,32,31,32,31,30,30,30,29,30,29,31],2027:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2028:[31,31,32,31,31,31,30,29,30,29,30,30],2029:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2030:[31,32,31,32,30,31,30,29,30,29,30,30],2031:[31,32,31,32,31,30,30,29,30,29,30,30],
+  2032:[31,32,31,32,31,30,30,30,29,29,30,31],2033:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2034:[31,31,32,31,31,30,30,30,29,30,29,31],2035:[31,31,32,31,31,30,30,30,29,30,29,31],
+  2036:[31,32,31,32,31,30,30,30,29,30,29,31],2037:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2038:[31,31,32,31,31,31,30,29,30,29,30,30],2039:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2040:[31,32,31,32,30,31,30,29,30,29,30,30],2041:[31,32,31,32,31,30,30,29,30,29,30,30],
+  2042:[31,32,31,32,31,30,30,30,29,29,30,31],2043:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2044:[31,31,32,31,31,30,30,30,29,30,29,31],2045:[31,31,32,31,31,30,30,30,29,30,29,31],
+  2046:[31,32,31,32,31,30,30,30,29,30,29,31],2047:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2048:[31,31,32,31,31,31,30,29,30,29,30,30],2049:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2050:[31,32,31,32,30,31,30,29,30,29,30,30],2051:[31,32,31,32,31,30,30,29,30,29,30,30],
+  2052:[31,32,31,32,31,30,30,30,29,29,30,31],2053:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2054:[31,31,32,31,31,30,30,30,29,30,29,31],2055:[31,31,32,31,31,30,30,30,29,30,29,31],
+  2056:[31,32,31,32,31,30,30,30,29,30,29,31],2057:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2058:[31,31,32,31,31,31,30,29,30,29,30,30],2059:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2060:[31,32,31,32,30,31,30,29,30,29,30,30],2061:[31,32,31,32,31,30,30,29,30,29,30,30],
+  2062:[31,32,31,32,31,30,30,30,29,29,30,31],2063:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2064:[31,31,32,31,31,30,30,30,29,30,29,31],2065:[31,31,32,31,31,30,30,30,29,30,29,31],
+  2066:[31,32,31,32,31,30,30,30,29,30,29,31],2067:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2068:[31,31,32,31,31,31,30,29,30,29,30,30],2069:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2070:[31,32,31,32,30,31,30,29,30,29,30,30],2071:[31,32,31,32,31,30,30,29,30,29,30,30],
+  2072:[31,32,31,32,31,30,30,30,29,29,30,31],2073:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2074:[31,31,32,31,31,30,30,30,29,30,29,31],2075:[31,31,32,31,31,30,30,30,29,30,29,31],
+  2076:[31,32,31,32,31,30,30,30,29,30,29,31],2077:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2078:[31,31,32,31,31,31,30,29,30,29,30,30],2079:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2080:[31,32,31,32,30,31,30,29,30,29,30,30],2081:[31,31,31,32,31,31,29,30,30,29,30,30],
+  2082:[31,31,32,31,31,30,30,30,29,30,29,31],2083:[31,31,32,31,31,30,30,30,29,30,29,31],
+  2084:[31,32,31,32,31,30,30,30,29,30,29,31],2085:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2086:[31,31,32,31,31,31,30,29,30,29,30,30],2087:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2088:[31,32,31,32,30,31,30,29,30,29,30,30],2089:[31,32,31,32,31,30,30,29,30,29,30,30],
+  2090:[31,32,31,32,31,30,30,30,29,29,30,31]
+};
+
+function adToBS(adDate) {
+  var date = new Date(adDate+'T00:00:00');
+  var adY = date.getFullYear(), adM = date.getMonth()+1, adD = date.getDate();
+  var bsY = 2000, bsM = 1, bsD = 1;
+  var refAD = new Date(1943, 3, 14); // BS 2000 Baishakh 1 = April 14, 1943
+  var diff = Math.round((date - refAD)/(1000*60*60*24));
+  if(diff < 0) return null;
+  var dayCount = 0;
+  outer: for(var y = 2000; y <= 2090; y++){
+    var months = BS_DATA[y];
+    if(!months) break;
+    for(var m = 0; m < 12; m++){
+      if(dayCount + months[m] > diff){
+        bsY = y; bsM = m+1; bsD = diff - dayCount + 1;
+        break outer;
+      }
+      dayCount += months[m];
+    }
+  }
+  return { y: bsY, m: bsM, d: bsD, dow: date.getDay() };
+}
+
+function bsDateStr(adDateStr) {
+  var bs = adToBS(adDateStr);
+  if(!bs) return adDateStr;
+  return bs.y+'-'+String(bs.m).padStart(2,'0')+'-'+String(bs.d).padStart(2,'0');
+}
+
+function bsDateFull(adDateStr) {
+  var bs = adToBS(adDateStr);
+  if(!bs) return adDateStr;
+  return BS_DAYS_NAME[bs.dow]+', '+bs.d+' '+BS_MONTHS_NAME[bs.m-1]+' '+bs.y;
+}
+
+function bsDateShort(adDateStr) {
+  var bs = adToBS(adDateStr);
+  if(!bs) return adDateStr;
+  return bs.d+' '+BS_MONTHS_SHORT[bs.m-1]+' '+bs.y;
+}
+
+function bsDateDisplay(adDateStr) {
+  var bs = adToBS(adDateStr);
+  if(!bs) return adDateStr;
+  return BS_MONTHS_NAME[bs.m-1]+' '+bs.d+', '+bs.y+' BS';
+}
+
+function todayBSFull() {
+  var bs = adToBS(new Date().toISOString().slice(0,10));
+  if(!bs) return '';
+  return BS_DAYS_NAME[bs.dow]+', '+bs.d+' '+BS_MONTHS_NAME[bs.m-1]+' '+bs.y+' BS';
+}
+
+function todayBSMonth() {
+  var bs = adToBS(new Date().toISOString().slice(0,10));
+  if(!bs) return '';
+  return BS_MONTHS_NAME[bs.m-1]+' '+bs.y+' BS';
+}
+/* ── end BS engine ── */
+
+function updateClock() {
+  var n = new Date();
+  document.getElementById('clock').textContent = n.toLocaleTimeString();
+  var adStr = n.toISOString().slice(0,10);
+  var adDisp = n.toLocaleDateString(undefined,{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('clock-date').textContent = todayBSFull() + '  ·  ' + adDisp;
+  var h = n.getHours();
+  document.getElementById('greeting').textContent = h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+}
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(function(n){
+    if(n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+id+"'")) n.classList.add('active');
+  });
+  if(id==='dashboard') renderDashboard();
+  if(id==='log') renderLog();
+  if(id==='requests') { renderRequests(); renderOTBudgetSummary(); }
+  if(id==='summary') renderSummary();
+  if(id==='settings') loadSettings();
+  if(id==='payslips') { renderPayslips(); psAutoFillAttendance(); }
+  if(id==='calendar') renderCalendar();
+}
+
+function checkInNow() {
+  var n = new Date();
+  state.checkinTime = n.toTimeString().slice(0,5);
+  save();
+  var el = document.getElementById('checkin-status');
+  el.className = 'status-pill in';
+  el.innerHTML = '<span class="dot in"></span> Checked in at '+state.checkinTime;
+}
+
+function quickCheckout() {
+  if(!state.checkinTime) { alert('No check-in time recorded. Use the Time Log to add a manual entry.'); return; }
+  var n = new Date();
+  var cout = n.toTimeString().slice(0,5);
+  var today = new Date().toISOString().slice(0,10);
+  var shift = state.settings.shift;
+  var worked = timeDiff(state.checkinTime, cout);
+  state.entries.push({ id: Date.now(), date: today, cin: state.checkinTime, cout: cout, worked: worked, shift: shift, note: '', tags: [] });
+  state.checkinTime = null;
+  save();
+  var el = document.getElementById('checkin-status');
+  el.className = 'status-pill out';
+  el.innerHTML = '<span class="dot out"></span> Checked out at '+cout;
+  renderDashboard();
+}
+
+function addLogEntry() {
+  var d = document.getElementById('log-date').value;
+  var cin = document.getElementById('log-cin').value;
+  var cout = document.getElementById('log-cout').value;
+  var shift = parseFloat(document.getElementById('log-shift').value)||8;
+  var note = document.getElementById('log-note').value.trim();
+  var tagsRaw = document.getElementById('log-tags').value.trim();
+  var tags = tagsRaw ? tagsRaw.split(',').map(function(t){return t.trim();}).filter(Boolean) : [];
+  if(!d||!cin||!cout){ alert('Please fill in date, check-in and check-out times.'); return; }
+  var worked = timeDiff(cin, cout);
+  if(worked<=0){ alert('Check-out must be after check-in.'); return; }
+  state.entries.push({ id: Date.now(), date: d, cin: cin, cout: cout, worked: worked, shift: shift, note: note, tags: tags });
+  save();
+  renderLog();
+  renderDashboard();
+  ['log-cin','log-cout','log-note','log-tags'].forEach(function(id){ document.getElementById(id).value=''; });
+}
+
+function deleteEntry(id) {
+  if(!confirm('Delete this entry?')) return;
+  state.entries = state.entries.filter(function(e){ return e.id!==id; });
+  save(); renderLog(); renderDashboard();
+}
+
+/* Return total OT minutes worked on a specific AD date from time log */
+function otOnDate(adDate) {
+  return state.entries
+    .filter(function(e){ return e.date === adDate; })
+    .reduce(function(s,e){ return s + getOT(e); }, 0);
+}
+
+function reqDateChanged(val) {
+  var bsEl = document.getElementById('req-date-bs');
+  var prev  = document.getElementById('req-ot-preview');
+  if(!val) {
+    bsEl.textContent = '';
+    prev.innerHTML = '<span style="color:var(--text3)">Pick a date</span>';
+    return;
+  }
+  bsEl.textContent = bsDateDisplay(val);
+  var otMins = otOnDate(val);
+  // check if already has a request
+  var existing = state.requests.find(function(r){ return r.date === val && r.status !== 'rejected'; });
+  if(existing) {
+    prev.innerHTML = '<span style="color:var(--amber)">⚠ Request already exists for this day</span>';
+    return;
+  }
+  if(otMins <= 0) {
+    prev.innerHTML = '<span style="color:var(--red)">No OT logged for this day</span>';
+  } else {
+    prev.innerHTML = '<strong style="color:var(--accent)">' + fmt(otMins) + '</strong>'
+      + ' <span style="color:var(--text3);font-size:11px">(' + (otMins/60).toFixed(2) + 'h)</span>';
+  }
+}
+
+function addRequest() {
+  var d      = document.getElementById('req-date').value;
+  var reason = document.getElementById('req-reason').value.trim();
+  var notes  = document.getElementById('req-notes').value.trim();
+  if(!d)      { alert('Please select the date you worked OT.'); return; }
+  if(!reason) { alert('Please enter a reason.'); return; }
+
+  var otMins = otOnDate(d);
+  if(otMins <= 0) { alert('No OT is logged for this date. Check in your Time Log first.'); return; }
+
+  var existing = state.requests.find(function(r){ return r.date === d && r.status !== 'rejected'; });
+  if(existing)  { alert('A request already exists for this date.'); return; }
+
+  var otHours = +(otMins/60).toFixed(4);
+  state.requests.push({
+    id: Date.now(), date: d,
+    hours: otHours,           // actual OT worked, from log
+    reason: reason, notes: notes,
+    tags: [], status: 'pending'
+  });
+  save(); renderRequests(); updatePendingBadge();
+  ['req-date','req-reason','req-notes'].forEach(function(id){ document.getElementById(id).value=''; });
+  document.getElementById('req-date-bs').textContent = '';
+  document.getElementById('req-ot-preview').innerHTML = '<span style="color:var(--text3)">Pick a date</span>';
+}
+
+function setRequestStatus(id, status) {
+  if(status === 'approved') {
+    showApprovePanel(id);
+    return;
+  }
+  var r = state.requests.find(function(r){ return r.id===id; });
+  if(r) { r.status = status; r.approvedHours = null; }
+  save(); renderRequests(); updatePendingBadge();
+}
+
+function showApprovePanel(id) {
+  var panelId = 'approve-panel-'+id;
+  var existing = document.getElementById(panelId);
+  if(existing) { existing.style.display = existing.style.display==='none'?'flex':'none'; return; }
+  var item = document.querySelector('[data-req-id="'+id+'"]');
+  if(!item) return;
+  var r = state.requests.find(function(r){ return r.id===id; });
+  // actual OT on that day from log
+  var actualMins = otOnDate(r.date);
+  var actualH    = (actualMins/60).toFixed(2);
+  var panel = document.createElement('div');
+  panel.id = panelId;
+  panel.className = 'approve-panel';
+  panel.innerHTML =
+    '<span style="font-size:12px;color:var(--text2)">Worked: <strong>'+fmt(actualMins)+'</strong></span>'
+    +'<label style="margin-left:8px">Approve:</label>'
+    +'<input type="number" id="ap-val-'+id+'" min="0.5" max="99" step="0.5" value="'+actualH+'" style="width:72px">'
+    +'<select id="ap-unit-'+id+'">'
+    +'<option value="hours">hours</option>'
+    +'<option value="minutes">minutes</option>'
+    +'</select>'
+    +'<button class="btn sm success" onclick="confirmApprove('+id+')">Confirm</button>'
+    +'<button class="btn sm" onclick="this.closest(\'.approve-panel\').remove()">Cancel</button>';
+  item.appendChild(panel);
+}
+
+function confirmApprove(id) {
+  var val = parseFloat(document.getElementById('ap-val-'+id).value);
+  var unit = document.getElementById('ap-unit-'+id).value;
+  if(!val || val <= 0) { alert('Please enter a valid approved amount.'); return; }
+  var approvedHours = unit === 'minutes' ? +(val/60).toFixed(4) : val;
+  var r = state.requests.find(function(r){ return r.id===id; });
+  if(r) {
+    r.status = 'approved';
+    r.approvedHours = approvedHours;
+    r.approvedDisplay = val + ' ' + unit;
+    r.approvedDate = new Date().toISOString().slice(0,10); // date approval was granted
+    // approvedOT is now computed dynamically — recompute
+    recomputeApprovedOT();
+  }
+  save(); renderRequests(); updatePendingBadge(); renderDashboard();
+}
+
+/* ── OT accounting ─────────────────────────────────────────────
+   Each approved request has:
+     r.date         = the day the OT was WORKED
+     r.approvedDate = the day the superior APPROVED it
+
+   The OT hours BELONG to the BS month of r.date (work month).
+   If r.approvedDate is in a LATER BS month than r.date,
+   those hours are "carry-over" INTO the work month's balance
+   (they were earned earlier but confirmed late).
+
+   Dashboard shows:
+     approvedOT = total approved hrs whose work date is in current BS month
+     carryover  = approved hrs whose work date was a PAST BS month
+                  (approved this month or earlier, but worked before)
+*/
+function getBSMonthKey(adDateStr) {
+  var bs = adToBS(adDateStr);
+  if(!bs) return null;
+  return bs.y + '-' + String(bs.m).padStart(2,'0');
+}
+
+function recomputeApprovedOT() {
+  var todayBS = adToBS(new Date().toISOString().slice(0,10));
+  if(!todayBS) return;
+  var currentKey = todayBS.y + '-' + String(todayBS.m).padStart(2,'0');
+
+  var approvedThisMonth = 0, carryover = 0;
+
+  state.requests.forEach(function(r) {
+    if(r.status !== 'approved' || !r.approvedHours) return;
+    var workKey = getBSMonthKey(r.date); // month OT was WORKED
+    if(workKey === currentKey) {
+      approvedThisMonth += r.approvedHours; // worked & (eventually) approved — belongs here
+    } else if(workKey < currentKey) {
+      carryover += r.approvedHours; // worked in a past month — carry-over into now
+    }
+  });
+
+  state.approvedOT = +approvedThisMonth.toFixed(4);
+  state.carryover  = +carryover.toFixed(4);
+}
+
+function renderOTBudgetSummary() {
+  var el = document.getElementById('ot-budget-summary');
+  if(!el) return;
+  recomputeApprovedOT();
+  var todayBS = adToBS(new Date().toISOString().slice(0,10));
+  var monthName = todayBS ? BS_MONTHS_NAME[todayBS.m-1]+' '+todayBS.y : 'Current month';
+  var total = state.approvedOT + state.carryover;
+  if(total === 0){
+    el.innerHTML = '<span style="color:var(--text3)">No approved OT for '+monthName+' yet. Approve requests above.</span>';
+    return;
+  }
+  el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">'
+    +'<div style="background:var(--bg2);border-radius:var(--radius-md);padding:12px;text-align:center">'
+    +'<div style="font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">Same-month OT</div>'
+    +'<div style="font-size:20px;font-weight:500;color:var(--accent);font-family:\'DM Mono\',monospace">'+state.approvedOT.toFixed(2)+'h</div>'
+    +'<div style="font-size:11px;color:var(--text3);margin-top:3px">worked &amp; approved in '+monthName+'</div></div>'
+    +'<div style="background:var(--bg2);border-radius:var(--radius-md);padding:12px;text-align:center">'
+    +'<div style="font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">Carry-over into '+monthName+'</div>'
+    +'<div style="font-size:20px;font-weight:500;color:var(--blue);font-family:\'DM Mono\',monospace">'+state.carryover.toFixed(2)+'h</div>'
+    +'<div style="font-size:11px;color:var(--text3);margin-top:3px">worked earlier, approved this month</div></div>'
+    +'<div style="background:var(--bg2);border-radius:var(--radius-md);padding:12px;text-align:center">'
+    +'<div style="font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">Total budget</div>'
+    +'<div style="font-size:20px;font-weight:500;color:var(--green);font-family:\'DM Mono\',monospace">'+total.toFixed(2)+'h</div>'
+    +'<div style="font-size:11px;color:var(--text3);margin-top:3px">available this month</div></div>'
+    +'</div>';
+}
+
+function deleteRequest(id) {
+  if(!confirm('Delete this request?')) return;
+  state.requests = state.requests.filter(function(r){ return r.id!==id; });
+  recomputeApprovedOT(); save(); renderRequests(); renderOTBudgetSummary(); updatePendingBadge();
+}
+
+function updatePendingBadge() {
+  var pending = state.requests.filter(function(r){ return r.status==='pending'; }).length;
+  var el = document.getElementById('pending-badge');
+  if(pending>0){ el.style.display='inline'; el.textContent=pending; } else el.style.display='none';
+}
+
+function renderDashboard() {
+  var today = new Date().toISOString().slice(0,10);
+  var todayEntries = state.entries.filter(function(e){ return e.date===today; });
+  var todayMins = todayEntries.reduce(function(s,e){ return s+e.worked; },0);
+  var otTodayMins = todayEntries.reduce(function(s,e){ return s+getOT(e); },0);
+
+  var now = new Date();
+  var monthStr = now.toISOString().slice(0,7);
+  var monthEntries = state.entries.filter(function(e){ return e.date.slice(0,7)===monthStr; });
+  var otMonthMins = totalOTMins(monthEntries);
+
+  document.getElementById('m-today').textContent = fmt(todayMins);
+  document.getElementById('m-ot-today').textContent = fmt(otTodayMins);
+  document.getElementById('m-ot-month').textContent = fmt(otMonthMins);
+  document.getElementById('m-ot-month-label').textContent = todayBSMonth();
+  document.getElementById('m-carryover').textContent = fmtH(state.carryover);
+
+  if(state.approvedOT>0){
+    var totalOTH = otMonthMins/60;
+    var used = totalOTH + state.carryover;
+    var remain = state.approvedOT - used;
+    var pct = Math.min(100,(used/state.approvedOT)*100);
+    document.getElementById('ot-approved-banner').style.display='flex';
+    document.getElementById('banner-approved').textContent = state.approvedOT+'h';
+    document.getElementById('banner-used').textContent = 'Used: '+fmtH(used);
+    document.getElementById('banner-remain').textContent = 'Remaining: '+fmtH(Math.max(0,remain));
+    document.getElementById('banner-progress').style.width = pct.toFixed(1)+'%';
+    document.getElementById('banner-progress').style.background = pct>90?'var(--red)':pct>70?'var(--amber)':'var(--green)';
+  } else {
+    document.getElementById('ot-approved-banner').style.display='none';
+  }
+
+  renderRecentTable();
+  renderWeekChart();
+  renderMonthChart();
+}
+
+function renderRecentTable() {
+  var sorted = state.entries.slice().sort(function(a,b){ return b.date.localeCompare(a.date)||b.cin.localeCompare(a.cin); }).slice(0,5);
+  var tbody = document.getElementById('recent-body');
+  if(!sorted.length){ tbody.innerHTML='<tr class="empty-row"><td colspan="6">No entries yet</td></tr>'; return; }
+  tbody.innerHTML = sorted.map(function(e){
+    var ot = getOT(e);
+    var flagged = !e.cout;
+    var bsDate = bsDateShort(e.date);
+    return '<tr>'
+      +'<td><span style="font-weight:500">'+bsDate+'</span><br><span style="font-size:11px;color:var(--text3)">'+e.date+'</span></td>'
+      +'<td class="mono">'+e.cin+'</td>'
+      +'<td class="mono">'+(e.cout||'<span class="badge flag">Missing</span>')+'</td>'
+      +'<td>'+fmt(e.worked)+'</td>'
+      +'<td class="ot">'+(ot>0?fmt(ot):'—')+'</td>'
+      +'<td>'+(flagged?'<span class="badge flag">No checkout</span>':'<span class="badge approved">OK</span>')+'</td>'
+      +'</tr>';
+  }).join('');
+}
+
+function renderLog() {
+  var sorted = state.entries.slice().sort(function(a,b){ return b.date.localeCompare(a.date)||b.cin.localeCompare(a.cin); });
+  document.getElementById('log-count').textContent = sorted.length+' entries';
+  var tbody = document.getElementById('log-body');
+  if(!sorted.length){ tbody.innerHTML='<tr class="empty-row"><td colspan="8">No entries yet. Add your first entry above.</td></tr>'; return; }
+  tbody.innerHTML = sorted.map(function(e){
+    var ot = getOT(e);
+    var tags = (e.tags||[]).map(function(t){ return '<span class="tag">'+t+'</span>'; }).join('');
+    var flagged = !e.cout;
+    var bsDate = bsDateShort(e.date);
+    return '<tr>'
+      +'<td>'+(flagged?'<span class="badge flag">!</span> ':'')+'<span style="font-weight:500">'+bsDate+'</span><br><span style="font-size:11px;color:var(--text3)">'+e.date+'</span></td>'
+      +'<td class="mono">'+e.cin+'</td>'
+      +'<td class="mono">'+(e.cout||'<span style="color:var(--red)">—</span>')+'</td>'
+      +'<td>'+fmt(e.worked)+'</td>'
+      +'<td class="ot">'+(ot>0?fmt(ot):'—')+'</td>'
+      +'<td>'+(tags||'—')+'</td>'
+      +'<td style="color:var(--text2);max-width:120px;overflow:hidden;text-overflow:ellipsis">'+(e.note||'—')+'</td>'
+      +'<td><button class="btn sm danger" onclick="deleteEntry('+e.id+')">×</button></td>'
+      +'</tr>';
+  }).join('');
+  document.getElementById('log-date').value = new Date().toISOString().slice(0,10);
+}
+
+function renderRequests() {
+  var el = document.getElementById('requests-list');
+  if(!state.requests.length){
+    el.innerHTML='<div style="text-align:center;color:var(--text3);padding:20px;font-size:13px">No requests yet. Pick a day above and submit.</div>';
+    return;
+  }
+  var sorted = state.requests.slice().sort(function(a,b){ return b.date.localeCompare(a.date); });
+
+  // per-month summary banner
+  var byWorkMonth = {};
+  state.requests.forEach(function(r){
+    if(r.status!=='approved'||!r.approvedHours) return;
+    var wKey = getBSMonthKey(r.date);
+    if(!wKey) return;
+    if(!byWorkMonth[wKey]) { byWorkMonth[wKey]={approved:0,label:''}; }
+    var bs = adToBS(r.date);
+    if(bs) byWorkMonth[wKey].label = BS_MONTHS_NAME[bs.m-1]+' '+bs.y;
+    byWorkMonth[wKey].approved += r.approvedHours;
+  });
+  var summaryKeys = Object.keys(byWorkMonth).sort().reverse();
+  var summaryHtml = '';
+  if(summaryKeys.length){
+    summaryHtml = '<div style="margin-bottom:12px">';
+    var currentKey = getBSMonthKey(new Date().toISOString().slice(0,10));
+    summaryKeys.forEach(function(k){
+      var m = byWorkMonth[k];
+      var isCarry = k < currentKey;
+      summaryHtml += '<div style="display:flex;align-items:center;gap:12px;padding:9px 14px;background:var(--bg2);border-radius:var(--radius-md);margin-bottom:6px;flex-wrap:wrap">'
+        +'<span style="font-size:13px;font-weight:500;color:var(--text);flex:1">'+m.label
+        +(isCarry?' <span style="font-size:10px;color:var(--blue);background:var(--blue-light);padding:1px 6px;border-radius:4px;margin-left:4px">carry-over</span>':'')
+        +'</span>'
+        +'<span style="font-size:12px;color:var(--text2)">Approved: <strong style="color:var(--green)">'+m.approved.toFixed(2)+'h</strong></span>'
+        +'</div>';
+    });
+    summaryHtml += '</div>';
+  }
+
+  el.innerHTML = summaryHtml + sorted.map(function(r){
+    var bsDate    = bsDateShort(r.date);
+    var actualMins = otOnDate(r.date);
+    var workedStr  = actualMins > 0 ? fmt(actualMins) : '—';
+
+    var actions = r.status==='pending'
+      ? '<button class="btn sm success" onclick="setRequestStatus('+r.id+',\'approved\')">Approve</button>'
+        +'<button class="btn sm danger"  onclick="setRequestStatus('+r.id+',\'rejected\')">Reject</button>'
+      : '';
+
+    var approvedBadge = '';
+    if(r.status==='approved' && r.approvedHours) {
+      var wKey = getBSMonthKey(r.date);
+      var aKey = getBSMonthKey(r.approvedDate || r.date);
+      var isCarry = aKey && wKey && aKey !== wKey;
+      approvedBadge = ' <span class="approved-amount">'+r.approvedHours.toFixed(2)+'h approved</span>'
+        +(isCarry ? ' <span style="background:var(--blue-light);color:var(--blue);font-size:10px;padding:1px 6px;border-radius:4px">approved in later month</span>' : '');
+    }
+
+    var approvedOnStr = (r.status==='approved' && r.approvedDate)
+      ? '<span style="font-size:10px;color:var(--text3);display:block">approved '+bsDateShort(r.approvedDate)+'</span>' : '';
+
+    return '<div class="request-item" data-req-id="'+r.id+'">'
+      +'<div class="request-date">'
+      +'<span style="font-weight:500;color:var(--text)">'+bsDate+'</span><br>'
+      +'<span style="font-size:10px;color:var(--text3)">'+r.date+'</span>'
+      +approvedOnStr+'</div>'
+      +'<div class="request-body">'
+      +'<div class="request-title">'+r.reason
+      +' — <strong>OT worked: '+workedStr+'</strong>'
+      +approvedBadge+'</div>'
+      +'<div class="request-meta">'+(r.notes||'')+'</div>'
+      +'</div>'
+      +'<div class="request-actions">'
+      +'<span class="badge '+r.status+'">'+r.status.charAt(0).toUpperCase()+r.status.slice(1)+'</span>'
+      +actions
+      +'<button class="btn sm" onclick="deleteRequest('+r.id+')">×</button>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════════════
+   NATIVE CANVAS CHART ENGINE  (no external dependencies)
+   ═══════════════════════════════════════════════════════ */
+function getChartColors() {
+  var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  return {
+    grid:        isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+    text:        isDark ? '#9E9B97' : '#6B6760',
+    accent:      '#C17D3C',
+    accentLight: isDark ? 'rgba(193,125,60,0.35)' : 'rgba(193,125,60,0.22)',
+    accentBorder:'#C17D3C',
+    green:       '#3A7D44',
+    greenLight:  isDark ? 'rgba(58,125,68,0.35)' : 'rgba(58,125,68,0.22)',
+    surface:     isDark ? '#1E1C19' : '#FFFFFF'
+  };
+}
+
+/* Draw a bar chart on a canvas element.
+   datasets = [{ values:[], color:'', borderColor:'', label:'' }, ...]
+   stacked: bool — stack datasets vertically */
+function drawBarChart(canvasId, labels, datasets, opts) {
+  var canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+  var c = getChartColors();
+  var dpr = window.devicePixelRatio || 1;
+  var W = canvas.offsetWidth || canvas.parentElement.offsetWidth || 400;
+  var H = canvas.offsetHeight || 220;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  var padL = 42, padR = 12, padT = opts && opts.legend ? 28 : 14, padB = 36;
+  var cW = W - padL - padR;
+  var cH = H - padT - padB;
+
+  // compute max
+  var maxVal = 0;
+  labels.forEach(function(_, i) {
+    var tot = datasets.reduce(function(s, ds) { return s + (ds.values[i] || 0); }, 0);
+    if(tot > maxVal) maxVal = tot;
+  });
+  maxVal = Math.max(maxVal * 1.1, 1);
+  var step = niceStep(maxVal, 4);
+  maxVal = Math.ceil(maxVal / step) * step;
+
+  // grid lines
+  ctx.strokeStyle = c.grid;
+  ctx.lineWidth = 1;
+  for(var gi = 0; gi <= 4; gi++) {
+    var gv = (maxVal / 4) * gi;
+    var gy = padT + cH - (gv / maxVal) * cH;
+    ctx.beginPath(); ctx.moveTo(padL, gy); ctx.lineTo(padL + cW, gy); ctx.stroke();
+    ctx.fillStyle = c.text;
+    ctx.font = '10px Courier New, monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(gv.toFixed(gv < 10 ? 1 : 0), padL - 4, gy + 3);
+  }
+
+  // bars
+  var n = labels.length;
+  var groupW = cW / n;
+  var barW = Math.min(groupW * 0.55, 32);
+
+  labels.forEach(function(lbl, i) {
+    var x = padL + i * groupW + (groupW - barW) / 2;
+    var stackY = padT + cH;
+    datasets.forEach(function(ds) {
+      var val = ds.values[i] || 0;
+      if(val <= 0) return;
+      var bH = (val / maxVal) * cH;
+      stackY -= bH;
+      ctx.fillStyle = ds.color;
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(x, stackY, barW, bH, [4,4,0,0]) : ctx.rect(x, stackY, barW, bH);
+      ctx.fill();
+      ctx.strokeStyle = ds.borderColor || ds.color;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
+    // x label
+    ctx.fillStyle = c.text;
+    ctx.font = '10px Courier New, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(lbl, padL + i * groupW + groupW / 2, H - padB + 14);
+  });
+
+  // legend
+  if(opts && opts.legend) {
+    var lx = padL;
+    datasets.forEach(function(ds) {
+      ctx.fillStyle = ds.color;
+      ctx.fillRect(lx, 6, 10, 10);
+      ctx.strokeStyle = ds.borderColor || ds.color;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(lx, 6, 10, 10);
+      ctx.fillStyle = c.text;
+      ctx.font = '10px Courier New, monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(ds.label || '', lx + 13, 15);
+      lx += ctx.measureText(ds.label || '').width + 30;
+    });
+  }
+}
+
+/* Draw a line chart */
+function drawLineChart(canvasId, labels, values, color, fillColor) {
+  var canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+  var c = getChartColors();
+  var dpr = window.devicePixelRatio || 1;
+  var W = canvas.offsetWidth || canvas.parentElement.offsetWidth || 400;
+  var H = canvas.offsetHeight || 220;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  var padL = 42, padR = 12, padT = 14, padB = 36;
+  var cW = W - padL - padR;
+  var cH = H - padT - padB;
+
+  var maxVal = Math.max.apply(null, values.concat([0]));
+  maxVal = Math.max(maxVal * 1.15, 1);
+
+  // grid
+  ctx.strokeStyle = c.grid; ctx.lineWidth = 1;
+  for(var gi = 0; gi <= 4; gi++) {
+    var gv = (maxVal / 4) * gi;
+    var gy = padT + cH - (gv / maxVal) * cH;
+    ctx.beginPath(); ctx.moveTo(padL, gy); ctx.lineTo(padL + cW, gy); ctx.stroke();
+    ctx.fillStyle = c.text; ctx.font = '10px Courier New, monospace'; ctx.textAlign = 'right';
+    ctx.fillText(gv.toFixed(1), padL - 4, gy + 3);
+  }
+
+  var n = labels.length;
+  var pts = values.map(function(v, i) {
+    return { x: padL + (i / (n - 1 || 1)) * cW, y: padT + cH - (v / maxVal) * cH };
+  });
+
+  // fill area
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, padT + cH);
+  pts.forEach(function(p) { ctx.lineTo(p.x, p.y); });
+  ctx.lineTo(pts[pts.length-1].x, padT + cH);
+  ctx.closePath();
+  ctx.fillStyle = fillColor;
+  ctx.fill();
+
+  // line (smooth via quadratic bezier)
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for(var i = 1; i < pts.length; i++) {
+    var mx = (pts[i-1].x + pts[i].x) / 2;
+    ctx.bezierCurveTo(mx, pts[i-1].y, mx, pts[i].y, pts[i].x, pts[i].y);
+  }
+  ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+
+  // dots
+  pts.forEach(function(p) {
+    ctx.beginPath(); ctx.arc(p.x, p.y, 3.5, 0, Math.PI*2);
+    ctx.fillStyle = color; ctx.fill();
+    ctx.strokeStyle = c.surface; ctx.lineWidth = 1.5; ctx.stroke();
+  });
+
+  // x labels
+  labels.forEach(function(lbl, i) {
+    ctx.fillStyle = c.text; ctx.font = '10px Courier New, monospace'; ctx.textAlign = 'center';
+    ctx.fillText(lbl, pts[i].x, H - padB + 14);
+  });
+}
+
+function niceStep(range, steps) {
+  var rough = range / steps;
+  var mag = Math.pow(10, Math.floor(Math.log10(rough)));
+  var norm = rough / mag;
+  var nice = norm < 1.5 ? 1 : norm < 3.5 ? 2 : norm < 7.5 ? 5 : 10;
+  return nice * mag;
+}
+
+function renderWeekChart() {
+  var c = getChartColors();
+  var days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  var now = new Date();
+  var weekData = [], otData = [];
+  for(var i = 0; i < 7; i++) {
+    var d = new Date(now);
+    var day = now.getDay() || 7;
+    d.setDate(now.getDate() - day + 1 + i);
+    var ds = d.toISOString().slice(0,10);
+    var des = state.entries.filter(function(e){ return e.date===ds; });
+    var worked = +(des.reduce(function(s,e){ return s+e.worked; },0)/60).toFixed(2);
+    var ot = +(totalOTMins(des)/60).toFixed(2);
+    weekData.push(Math.max(0, worked - ot));
+    otData.push(ot);
+  }
+  drawBarChart('chart-week', days, [
+    { values: weekData, color: c.greenLight,  borderColor: c.green,  label: 'Regular' },
+    { values: otData,   color: c.accentLight, borderColor: c.accent, label: 'OT' }
+  ], { legend: true });
+}
+
+function renderMonthChart() {
+  var c = getChartColors();
+  var labels = [], data = [];
+  var now = new Date();
+  for(var i = 5; i >= 0; i--) {
+    var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    var ms = d.toISOString().slice(0,7);
+    labels.push(d.toLocaleString('default', { month:'short' }));
+    var mes = state.entries.filter(function(e){ return e.date.slice(0,7)===ms; });
+    data.push(+(totalOTMins(mes)/60).toFixed(2));
+  }
+  drawLineChart('chart-month', labels, data, c.accent, c.accentLight);
+}
+
+function renderWeeklySummary() {
+  var c = getChartColors();
+  var labels = [], data = [];
+  var now = new Date();
+  for(var w = 7; w >= 0; w--) {
+    var start = new Date(now);
+    var day = start.getDay() || 7;
+    start.setDate(start.getDate() - day + 1 - (w * 7));
+    labels.push(start.toLocaleDateString('default', { month:'short', day:'numeric' }));
+    var wOT = 0;
+    for(var di = 0; di < 7; di++) {
+      var dd = new Date(start); dd.setDate(dd.getDate() + di);
+      var ds = dd.toISOString().slice(0,10);
+      wOT += totalOTMins(state.entries.filter(function(e){ return e.date===ds; })) / 60;
+    }
+    data.push(+wOT.toFixed(2));
+  }
+  drawBarChart('chart-weekly-summary', labels, [
+    { values: data, color: c.accentLight, borderColor: c.accent, label: 'OT hours' }
+  ], {});
+  renderWeeklyBreakdown();
+}
+
+function renderMonthlySummary() {
+  var c = getChartColors();
+  var labels = [], data = [];
+  var now = new Date();
+  var rows = '';
+  for(var i = 5; i >= 0; i--) {
+    var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    var ms = d.toISOString().slice(0,7);
+    var mes = state.entries.filter(function(e){ return e.date.slice(0,7)===ms; });
+    var worked = mes.reduce(function(s,e){ return s+e.worked; },0);
+    var ot = totalOTMins(mes)/60;
+    var approved = i===0 ? state.approvedOT : 0;
+    var balance = approved ? (ot - approved).toFixed(1) : '—';
+    var bsMonthLabel = (function(){
+      var midDay = new Date(d.getFullYear(), d.getMonth(), 15).toISOString().slice(0,10);
+      var bs = adToBS(midDay);
+      return bs ? BS_MONTHS_NAME[bs.m-1]+' '+bs.y+' BS' : d.toLocaleString('default',{month:'long'});
+    })();
+    var balColor = balance!=='—'?(parseFloat(balance)>0?'var(--red)':'var(--green)'):'var(--text2)';
+    rows += '<tr><td><span style="font-weight:500">'+bsMonthLabel+'</span><br><span style="font-size:11px;color:var(--text3)">'+d.toLocaleString('default',{month:'long'})+' '+d.getFullYear()+'</span></td>'
+      +'<td>'+fmt(worked)+'</td><td class="ot">'+fmtH(ot)+'</td><td>'+(approved?approved+'h':'—')+'</td>'
+      +'<td style="color:'+balColor+'">'+(balance!=='—'?(parseFloat(balance)>0?'+':'')+balance+'h':balance)+'</td></tr>';
+    labels.push(d.toLocaleString('default',{month:'short'}));
+    data.push(+ot.toFixed(2));
+  }
+  document.getElementById('monthly-breakdown-body').innerHTML = rows;
+  drawBarChart('chart-monthly-summary', labels, [
+    { values: data, color: c.accentLight, borderColor: c.accent, label: 'OT hours' }
+  ], {});
+}
+
+function renderWeeklyBreakdown() {
+  var days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  var now = new Date();
+  var day = now.getDay() || 7;
+  var tbody = document.getElementById('weekly-breakdown-body');
+  var rows = '';
+  for(var i = 0; i < 7; i++) {
+    var d = new Date(now); d.setDate(now.getDate() - day + 1 + i);
+    var ds = d.toISOString().slice(0,10);
+    var des = state.entries.filter(function(e){ return e.date===ds; });
+    var worked = des.reduce(function(s,e){ return s+e.worked; },0);
+    var ot = totalOTMins(des);
+    var regular = Math.max(0, worked - ot);
+    rows += '<tr><td>'+days[i]+' <span style="font-size:11px;color:var(--text3)">'+bsDateShort(ds)+'</span><br>'
+      +'<span style="font-size:10px;color:var(--text3)">'+ds+'</span></td>'
+      +'<td>'+(worked?fmt(worked):'—')+'</td>'
+      +'<td>'+(regular?fmt(regular):'—')+'</td>'
+      +'<td class="ot">'+(ot?fmt(ot):'—')+'</td></tr>';
+  }
+  tbody.innerHTML = rows;
+}
+
+function setSummaryTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  el.classList.add('active');
+  document.getElementById('summary-weekly').style.display  = tab==='weekly'  ? 'block' : 'none';
+  document.getElementById('summary-monthly').style.display = tab==='monthly' ? 'block' : 'none';
+  if(tab==='weekly') renderWeeklySummary();
+  else renderMonthlySummary();
+}
+
+function renderSummary() {
+  renderWeeklySummary();
+  renderWeeklyBreakdown();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   NEPAL PUBLIC HOLIDAYS — bundled data (BS year → [m,d,'name'])
+   Source: Government of Nepal official gazette, 2081-2082
+   ═══════════════════════════════════════════════════════════════ */
+var NP_HOLIDAYS = {
+  2081:[
+    [1,1,'New Year (Navabarsha)'],
+    [1,11,'Ram Nawami'],
+    [2,15,'Buddha Jayanti'],
+    [3,15,'Ubhauli'],
+    [4,1,'Constitution Day (Asar 1)'],
+    [5,29,'Janai Purnima'],
+    [5,30,'Gai Jatra'],
+    [6,1,'Indra Jatra'],
+    [6,3,'Teej'],
+    [6,15,'Ghatasthapana'],
+    [6,25,'Phulpati'],
+    [6,26,'Maha Ashtami'],
+    [6,27,'Maha Nawami'],
+    [6,28,'Dashami (Vijaya Dashami)'],
+    [7,14,'Laxmi Puja'],
+    [7,15,'Govardhan Puja'],
+    [7,16,'Bhai Tika'],
+    [7,30,'Chhath Parwa'],
+    [8,15,'Udhauli'],
+    [9,1,'Constitution Day'],
+    [9,15,'Yomari Punhi'],
+    [10,15,'Maghe Sankranti'],
+    [11,15,'Sonam Losar'],
+    [11,29,'Maha Shivaratri'],
+    [12,15,'Holi (Fagu Purnima)'],
+    [12,30,'Chaite Dashain']
+  ],
+  2082:[
+    [1,1,'New Year (Navabarsha)'],
+    [1,3,'Ram Nawami'],
+    [2,2,'Buddha Jayanti'],
+    [3,15,'Ubhauli'],
+    [4,1,'Asar 1'],
+    [5,16,'Janai Purnima'],
+    [5,17,'Gai Jatra'],
+    [5,31,'Krishna Janmashtami'],
+    [6,17,'Indra Jatra'],
+    [6,20,'Teej'],
+    [6,3,'Ghatasthapana'],
+    [6,12,'Phulpati'],
+    [6,13,'Maha Ashtami'],
+    [6,14,'Maha Nawami'],
+    [6,15,'Vijaya Dashami'],
+    [7,1,'Laxmi Puja'],
+    [7,2,'Govardhan Puja'],
+    [7,3,'Bhai Tika'],
+    [7,18,'Chhath Parwa'],
+    [8,15,'Udhauli'],
+    [9,1,'Constitution Day'],
+    [9,3,'Yomari Punhi'],
+    [9,29,'National Unity Day'],
+    [10,1,'Maghe Sankranti'],
+    [11,3,'Sonam Losar'],
+    [11,17,'Maha Shivaratri'],
+    [12,3,'Holi (Fagu Purnima)'],
+    [12,18,'Chaite Dashain']
+  ]
+};
+
+/* Tithi names (lunar day) — 30 tithis in a lunar month */
+var TITHI_NAMES = ['Pratipada','Dwitiya','Tritiya','Chaturthi','Panchami',
+  'Shashthi','Saptami','Ashtami','Nawami','Dashami','Ekadashi','Dwadashi',
+  'Trayodashi','Chaturdashi','Purnima','Pratipada','Dwitiya','Tritiya',
+  'Chaturthi','Panchami','Shashthi','Saptami','Ashtami','Nawami','Dashami',
+  'Ekadashi','Dwadashi','Trayodashi','Chaturdashi','Amavasya'];
+
+/* Approximate tithi: lunar cycle ≈ 29.53 days, reference new moon 2000-01-06 */
+function getTithi(adDateStr) {
+  var refNewMoon = new Date('2000-01-06T00:00:00Z').getTime();
+  var d = new Date(adDateStr + 'T00:00:00Z').getTime();
+  var daysSince = (d - refNewMoon) / 86400000;
+  var lunarDay = ((daysSince % 29.53059) + 29.53059) % 29.53059;
+  return TITHI_NAMES[Math.floor(lunarDay)];
+}
+
+/* Build a lookup: '2081-6-15' → holiday name */
+function getHolidayMap(bsYear) {
+  var map = {};
+  var list = NP_HOLIDAYS[bsYear] || [];
+  list.forEach(function(h){ map[bsYear+'-'+h[0]+'-'+h[1]] = h[2]; });
+  return map;
+}
+
+var calState = { y: 0, m: 0 };
+
+function calGoToday() {
+  var bs = adToBS(new Date().toISOString().slice(0,10));
+  if(bs) { calState.y = bs.y; calState.m = bs.m; }
+  renderCalendar();
+}
+
+function calNav(dir) {
+  calState.m += dir;
+  if(calState.m > 12) { calState.m = 1; calState.y++; }
+  if(calState.m < 1)  { calState.m = 12; calState.y--; }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  if(!calState.y) {
+    var bs = adToBS(new Date().toISOString().slice(0,10));
+    calState.y = bs ? bs.y : 2082;
+    calState.m = bs ? bs.m : 1;
+  }
+
+  var y = calState.y, m = calState.m;
+  var allDates  = getBSDatesForMonth(y, m);
+  var totalDays = allDates.length;
+  var firstDow  = new Date(allDates[0] + 'T00:00:00').getDay(); // 0=Sun
+
+  var logged  = {};
+  state.entries.forEach(function(e){ logged[e.date] = true; });
+
+  var today    = new Date().toISOString().slice(0,10);
+  var todayBS  = adToBS(today);
+  var isCurMon = todayBS && todayBS.y === y && todayBS.m === m;
+
+  var holidays = getHolidayMap(y);
+  // also check adjacent year for month-boundary holidays
+  var holidays2 = getHolidayMap(y + 1);
+  Object.keys(holidays2).forEach(function(k){ if(!holidays[k]) holidays[k] = holidays2[k]; });
+
+  document.getElementById('cal-title').textContent = BS_MONTHS_NAME[m-1] + ' ' + y + ' BS';
+
+  /* ── Grid ── */
+  var html = '<table style="width:100%;border-collapse:separate;border-spacing:2px">';
+  html += '<thead><tr>';
+  ['आइत','सोम','मंगल','बुध','बिही','शुक्र','शनि'].forEach(function(d, i) {
+    html += '<th style="padding:4px 2px;font-size:11px;font-weight:500;color:'+(i===0?'var(--red)':'var(--text3)')+';text-align:center;width:14.28%">'+d+'</th>';
+  });
+  html += '</tr></thead><tbody><tr>';
+
+  for(var b = 0; b < firstDow; b++) html += '<td style="padding:2px"></td>';
+
+  var col = firstDow;
+  for(var day = 1; day <= totalDays; day++) {
+    var adDate   = allDates[day-1];
+    var dow      = new Date(adDate + 'T00:00:00').getDay();
+    var isToday  = isCurMon && todayBS.d === day;
+    var isLogged = logged[adDate];
+    var isSun    = dow === 0;
+    var hkey     = y+'-'+m+'-'+day;
+    var holiday  = holidays[hkey];
+    var isHol    = !!holiday;
+
+    var bg = isToday  ? 'var(--accent-light)'
+           : isLogged ? 'var(--green-light)'
+           : isHol    ? 'var(--red-light)'
+           : isSun    ? 'var(--bg2)'
+           : 'var(--surface)';
+    var border = isToday  ? '1.5px solid var(--accent)'
+               : isLogged ? '1px solid var(--green)'
+               : isHol    ? '1px solid rgba(192,57,43,.3)'
+               : '1px solid var(--border)';
+    var numColor = isSun || isHol ? 'var(--red)'
+                 : isToday        ? 'var(--accent-dark)'
+                 : 'var(--text)';
+
+    var adDay  = parseInt(adDate.slice(8));
+    var adMon  = new Date(adDate+'T00:00:00').toLocaleString('default',{month:'short'});
+    var tithi  = getTithi(adDate);
+
+    html += '<td style="padding:2px;vertical-align:top">'
+      + '<div style="border-radius:8px;padding:5px 4px 4px;background:'+bg+';border:'+border+';min-height:56px;cursor:default;position:relative" title="'+(holiday||tithi)+'">'
+      + '<div style="font-size:14px;font-weight:'+(isToday?'700':'500')+';color:'+numColor+';line-height:1">'+day+'</div>'
+      + '<div style="font-size:9px;color:var(--text3);margin-top:1px">'+adDay+' '+adMon+'</div>'
+      + (isHol ? '<div style="font-size:8px;color:var(--red);margin-top:2px;line-height:1.2;overflow:hidden;max-height:22px">'+holiday+'</div>'
+               : '<div style="font-size:8px;color:var(--text3);margin-top:2px">'+tithi+'</div>')
+      + (isLogged ? '<div style="position:absolute;top:4px;right:5px;width:6px;height:6px;background:var(--green);border-radius:50%"></div>' : '')
+      + '</div></td>';
+
+    col++;
+    if(col % 7 === 0 && day < totalDays) html += '</tr><tr>';
+  }
+  var rem = (7 - (col % 7)) % 7;
+  for(var t = 0; t < rem; t++) html += '<td style="padding:2px"></td>';
+  html += '</tr></tbody></table>';
+  document.getElementById('cal-grid').innerHTML = html;
+
+  /* ── Today panel ── */
+  renderCalTodayPanel(todayBS, today);
+
+  /* ── Upcoming holidays ── */
+  renderUpcomingHolidays(todayBS, today);
+}
+
+function renderCalTodayPanel(todayBS, today) {
+  var el = document.getElementById('cal-today-panel');
+  if(!el) return;
+  if(!todayBS) { el.innerHTML = '<div style="color:var(--text3);font-size:13px">Date unavailable</div>'; return; }
+  var dow   = ['Aaitabar','Sombar','Mangalbar','Budhabar','Bihibar','Sukrabar','Sanibar'][new Date(today+'T00:00:00').getDay()];
+  var tithi = getTithi(today);
+  var hkey  = todayBS.y+'-'+todayBS.m+'-'+todayBS.d;
+  var hmap  = getHolidayMap(todayBS.y);
+  var hol   = hmap[hkey];
+  var adStr = new Date(today+'T00:00:00').toLocaleDateString('default',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  el.innerHTML =
+    '<div style="font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Today</div>'
+    +'<div style="font-size:26px;font-weight:700;color:var(--accent);font-family:\'Courier New\',monospace;line-height:1">'+todayBS.d+'</div>'
+    +'<div style="font-size:14px;font-weight:500;color:var(--text);margin-top:2px">'+BS_MONTHS_NAME[todayBS.m-1]+' '+todayBS.y+' BS</div>'
+    +'<div style="font-size:12px;color:var(--text2);margin-top:2px">'+dow+'</div>'
+    +'<div style="height:1px;background:var(--border);margin:10px 0"></div>'
+    +'<div style="font-size:11px;color:var(--text3)">'+adStr+'</div>'
+    +'<div style="font-size:11px;color:var(--text2);margin-top:4px">Tithi: '+tithi+'</div>'
+    +(hol ? '<div style="margin-top:8px;padding:6px 10px;background:var(--red-light);border:1px solid rgba(192,57,43,.25);border-radius:var(--radius-md);font-size:12px;color:var(--red)">🎉 '+hol+'</div>' : '');
+}
+
+function renderUpcomingHolidays(todayBS, today) {
+  var el = document.getElementById('cal-upcoming');
+  if(!el) return;
+  if(!todayBS) return;
+
+  var upcoming = [];
+  [todayBS.y, todayBS.y+1].forEach(function(yr) {
+    (NP_HOLIDAYS[yr]||[]).forEach(function(h) {
+      var adDates = getBSDatesForMonth(yr, h[0]);
+      var adDate  = adDates[h[1]-1];
+      if(adDate && adDate >= today) {
+        upcoming.push({ adDate:adDate, bsY:yr, bsM:h[0], bsD:h[1], name:h[2] });
+      }
+    });
+  });
+  upcoming.sort(function(a,b){ return a.adDate.localeCompare(b.adDate); });
+  upcoming = upcoming.slice(0,8);
+
+  if(!upcoming.length) { el.innerHTML = '<div style="color:var(--text3);font-size:12px">No upcoming holidays found.</div>'; return; }
+
+  el.innerHTML = upcoming.map(function(h) {
+    var daysAway = Math.round((new Date(h.adDate+'T00:00:00') - new Date(today+'T00:00:00')) / 86400000);
+    var label = daysAway === 0 ? 'Today' : daysAway === 1 ? 'Tomorrow' : 'in '+daysAway+' days';
+    return '<div style="display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">'
+      +'<div style="min-width:32px;text-align:center;background:var(--red-light);border-radius:6px;padding:4px 2px">'
+      +'<div style="font-size:14px;font-weight:600;color:var(--red);line-height:1">'+h.bsD+'</div>'
+      +'<div style="font-size:9px;color:var(--red)">'+BS_MONTHS_NAME[h.bsM-1].slice(0,3)+'</div>'
+      +'</div>'
+      +'<div style="flex:1">'
+      +'<div style="font-size:12px;font-weight:500;color:var(--text)">'+h.name+'</div>'
+      +'<div style="font-size:10px;color:var(--text3);margin-top:1px">'+label+'</div>'
+      +'</div></div>';
+  }).join('');
+}
+
+function loadSettings() {
+  document.getElementById('set-shift').value = state.settings.shift||8;
+  document.getElementById('set-days').value = state.settings.days||5;
+}
+
+function saveSettings() {
+  state.settings.shift = parseFloat(document.getElementById('set-shift').value)||8;
+  state.settings.days = parseInt(document.getElementById('set-days').value)||5;
+  save(); alert('Settings saved.');
+}
+
+function toggleTheme() {
+  state.theme = state.theme==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme', state.theme==='dark'?'dark':'');
+  if(state.theme==='light') document.documentElement.removeAttribute('data-theme');
+  document.getElementById('theme-label').textContent = state.theme==='dark'?'Dark mode':'Light mode';
+  save();
+  renderDashboard();
+}
+
+function clearData() {
+  if(!confirm('Clear ALL data? This cannot be undone.')) return;
+  state.entries=[]; state.requests=[]; state.approvedOT=0; state.carryover=0;
+  save(); renderDashboard(); renderLog(); renderRequests();
+}
+
+function exportCSV() {
+  var rows = [['Date','Check-in','Check-out','Worked (min)','OT (min)','Shift (hrs)','Tags','Note']];
+  state.entries.forEach(function(e){
+    rows.push([e.date,e.cin,e.cout||'',e.worked,Math.round(getOT(e)/1),(e.shift||8),(e.tags||[]).join(';'),e.note||'']);
+  });
+  var csv = rows.map(function(r){ return r.map(function(c){ return '"'+String(c).replace(/"/g,'""')+'"'; }).join(','); }).join('\n');
+  var blob = new Blob([csv],{type:'text/csv'});
+  var a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='ot_log.csv'; a.click();
+}
+
+function exportPDF() {
+  var w = window.open('','_blank');
+  var rows = state.entries.slice().sort(function(a,b){ return b.date.localeCompare(a.date); });
+  var html = '<html><head><title>OT Log</title><style>body{font-family:sans-serif;font-size:13px;padding:24px}h1{font-size:18px;margin-bottom:16px}table{width:100%;border-collapse:collapse}th,td{padding:8px 10px;border:1px solid #ddd;text-align:left}th{background:#f5f5f5;font-weight:600}tr:nth-child(even){background:#fafafa}</style></head><body>';
+  html += '<h1>OT Time Log — Exported '+new Date().toLocaleDateString()+'</h1>';
+  html += '<table><thead><tr><th>Date</th><th>In</th><th>Out</th><th>Worked</th><th>OT</th><th>Note</th></tr></thead><tbody>';
+  rows.forEach(function(e){
+    html += '<tr><td>'+e.date+'</td><td>'+e.cin+'</td><td>'+(e.cout||'—')+'</td><td>'+fmt(e.worked)+'</td><td>'+fmt(getOT(e))+'</td><td>'+(e.note||'—')+'</td></tr>';
+  });
+  html += '</tbody></table></body></html>';
+  w.document.write(html); w.document.close(); w.print();
+}
+
+
+/* payslip helpers use BS_MONTHS_NAME from engine above */
+var BS_MONTHS = BS_MONTHS_NAME;
+
+function g(id){ return parseFloat(document.getElementById(id).value)||0; }
+function gv(id){ var el=document.getElementById(id); return el?el.value.trim():''; }
+
+function psCalcNet() {
+  var gross = g('ps-basic')+g('ps-da')+g('ps-ssf-contrib')+g('ps-night')+g('ps-sat')+g('ps-ot-pay')+g('ps-leavepay')+g('ps-otherincome');
+  var totalDed = g('ps-ssf-ded')+g('ps-loss')+g('ps-lunch')+g('ps-tds')+g('ps-otherded');
+  var net = gross - totalDed;
+  document.getElementById('ps-gross').textContent = 'NPR '+gross.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  document.getElementById('ps-totaldedshow').textContent = 'NPR '+totalDed.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  document.getElementById('ps-preview').textContent = 'NPR '+net.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  return { gross:gross, totalDed:totalDed, net:net };
+}
+
+/* ── Attendance logic ──
+   For a given BS year+month, find all AD dates in that BS month,
+   group by ISO week (Mon–Sun), then:
+   - present = count of distinct days with a check-in entry
+   - leave   = number of weeks where check-ins == 0  (missed whole week)
+   - absent  = number of weeks where check-ins == 1  (only once that week)
+*/
+function getBSDatesForMonth(bsYear, bsMonth) {
+  var days = BS_DATA[bsYear] ? BS_DATA[bsYear][bsMonth-1] : 30;
+  var dates = [];
+  // Find the AD date for BS year/month/1 by scanning forward from ref
+  var ref = new Date(1943, 3, 14); // BS 2000/1/1 = AD 1943-04-14
+  var offset = 0;
+  for(var y=2000; y<bsYear; y++){
+    if(!BS_DATA[y]) break;
+    BS_DATA[y].forEach(function(d){ offset+=d; });
+  }
+  if(BS_DATA[bsYear]){
+    for(var m=0; m<bsMonth-1; m++) offset += BS_DATA[bsYear][m];
+  }
+  for(var d=0; d<days; d++){
+    var ad = new Date(ref.getTime()+(offset+d)*86400000);
+    dates.push(ad.toISOString().slice(0,10));
+  }
+  return dates;
+}
+
+function isoWeek(dateStr) {
+  var d = new Date(dateStr+'T00:00:00');
+  var day = d.getDay()||7;
+  var mon = new Date(d); mon.setDate(d.getDate()-day+1);
+  return mon.toISOString().slice(0,10);
+}
+
+/* ── Attendance rules ──────────────────────────────────────────
+   For each week (Mon–Sat, Sundays skipped) in the BS month:
+   - missed 0 days               → all present, nothing to flag
+   - missed exactly 1 day        → that day = Holiday (auto)
+   - missed 2+ days              → prompt user: Leave or Absent per day
+   Overrides stored in state.attendanceOverrides[adDateStr] = 'leave'|'absent'
+   ────────────────────────────────────────────────────────────── */
+
+function calcAttendance(bsYear, bsMonth) {
+  var allDates   = getBSDatesForMonth(bsYear, bsMonth);
+  var overrides  = state.attendanceOverrides || {};
+  var checkedIn  = {};
+  state.entries.forEach(function(e){ checkedIn[e.date] = true; });
+
+  // group Mon–Sat dates by week key
+  var weeks = {};
+  allDates.forEach(function(ds){
+    if(new Date(ds+'T00:00:00').getDay() === 0) return; // skip Sunday
+    var wk = isoWeek(ds);
+    if(!weeks[wk]) weeks[wk] = [];
+    weeks[wk].push(ds);
+  });
+
+  var presentDays = 0, holidayDays = 0, leaveDays = 0, absentDays = 0, otMins = 0;
+  var needsPrompt = []; // days that need user decision
+
+  Object.keys(weeks).forEach(function(wk){
+    var wkDays    = weeks[wk];
+    var missed    = wkDays.filter(function(ds){ return !checkedIn[ds]; });
+    var missedCnt = missed.length;
+
+    if(missedCnt === 0) {
+      // full week — all present
+      presentDays += wkDays.length;
+    } else if(missedCnt === 1) {
+      // exactly 1 missed → auto Holiday
+      presentDays += wkDays.length - 1;
+      holidayDays += 1;
+    } else {
+      // 2+ missed → present for checked-in days, prompt for missed
+      presentDays += wkDays.length - missedCnt;
+      missed.forEach(function(ds){
+        if(overrides[ds] === 'leave')        { leaveDays++;  }
+        else if(overrides[ds] === 'absent')  { absentDays++; }
+        else                                  { needsPrompt.push(ds); }
+      });
+    }
+  });
+
+  // OT from entries in this BS month
+  state.entries.forEach(function(e){
+    if(allDates.indexOf(e.date) >= 0) otMins += getOT(e);
+  });
+
+  var workingDays = allDates.filter(function(ds){
+    return new Date(ds+'T00:00:00').getDay() !== 0;
+  }).length;
+
+  return {
+    present:     presentDays,
+    holiday:     holidayDays,
+    leave:       leaveDays,
+    absent:      absentDays,
+    total:       allDates.length,
+    workingDays: workingDays,
+    otHrs:       +(otMins/60).toFixed(1),
+    needsPrompt: needsPrompt   // dates still awaiting user decision
+  };
+}
+
+function psAutoFillAttendance() {
+  var month = parseInt(document.getElementById('ps-month').value) || 1;
+  var year  = parseInt(document.getElementById('ps-year').value)  || 0;
+  if(!year || year < 2070) return;
+
+  var att = calcAttendance(year, month);
+
+  // live counter tiles
+  document.getElementById('att-present').textContent = att.present;
+  document.getElementById('att-holiday').textContent = att.holiday;
+  document.getElementById('att-leave').textContent   = att.leave;
+  document.getElementById('att-absent').textContent  = att.absent;
+  document.getElementById('att-ot').textContent      = att.otHrs + 'h';
+
+  // fill form fields
+  document.getElementById('ps-presentdays').value = att.present;
+  document.getElementById('ps-holidays').value    = att.holiday;
+  document.getElementById('ps-leave').value       = att.leave;
+  document.getElementById('ps-absent').value      = att.absent;
+  document.getElementById('ps-ot-hrs').value      = att.otHrs;
+  document.getElementById('ps-totaldays').value   = att.total;
+  document.getElementById('ps-salarydays').value  = att.present;
+  document.getElementById('ps-alloweddays').value = att.workingDays;
+
+  // show prompt bar if any days need a decision
+  if(att.needsPrompt.length > 0) {
+    showAttendancePrompt(att.needsPrompt, month, year);
+  } else {
+    dismissNotif();
+  }
+}
+
+/* ── Notification bar ── */
+function showAttendancePrompt(days, bsMonth, bsYear) {
+  var bar   = document.getElementById('notif-bar');
+  var list  = document.getElementById('notif-days-list');
+  var label = document.getElementById('notif-month-label');
+  var title = document.getElementById('notif-title-text');
+
+  title.textContent = days.length + ' day' + (days.length > 1 ? 's' : '') + ' need to be marked';
+  label.textContent = '— ' + BS_MONTHS_NAME[bsMonth-1] + ' ' + bsYear;
+
+  var overrides = state.attendanceOverrides || {};
+
+  list.innerHTML = days.sort().map(function(ds){
+    var bs  = adToBS(ds);
+    var bsLabel = bs ? BS_MONTHS_SHORT[bs.m-1]+' '+bs.d+', '+bs.y : ds;
+    var dow = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(ds+'T00:00:00').getDay()];
+    var cur = overrides[ds] || '';
+    return '<div class="notif-day-row" id="nrow-'+ds+'">'
+      + '<span class="notif-day-label">'+dow+', '+bsLabel+'<span class="notif-day-sub">'+ds+'</span></span>'
+      + '<div class="notif-actions">'
+      + '<button class="btn sm'+(cur==='leave'?' primary':'')+'" id="nbtn-leave-'+ds+'" onclick="setDayOverride(\''+ds+'\',\'leave\')">Leave</button>'
+      + '<button class="btn sm'+(cur==='absent'?' danger':'')+'" id="nbtn-absent-'+ds+'" onclick="setDayOverride(\''+ds+'\',\'absent\')">Absent</button>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+
+  bar.style.display = 'block';
+  // push page content down so bar doesn't overlap
+  document.querySelector('.app').style.paddingTop = bar.querySelector('.notif-inner').scrollHeight + 32 + 'px';
+}
+
+function setDayOverride(ds, type) {
+  if(!state.attendanceOverrides) state.attendanceOverrides = {};
+  state.attendanceOverrides[ds] = type;
+  // update button highlights inline
+  var leaveBtn  = document.getElementById('nbtn-leave-'+ds);
+  var absentBtn = document.getElementById('nbtn-absent-'+ds);
+  if(leaveBtn)  leaveBtn.className  = 'btn sm' + (type === 'leave'  ? ' primary' : '');
+  if(absentBtn) absentBtn.className = 'btn sm' + (type === 'absent' ? ' danger'  : '');
+  save();
+}
+
+function applyNotifDecisions() {
+  dismissNotif();
+  psAutoFillAttendance(); // recompute with saved overrides
+}
+
+function dismissNotif() {
+  var bar = document.getElementById('notif-bar');
+  if(bar) bar.style.display = 'none';
+  document.querySelector('.app').style.paddingTop = '';
+}
+
+function addPayslip() {
+  var month = parseInt(document.getElementById('ps-month').value);
+  var year = parseInt(document.getElementById('ps-year').value);
+  if(!year||year<2070){ alert('Please enter a valid BS year.'); return; }
+  var calc = psCalcNet();
+  var slip = {
+    id: Date.now(), year:year, month:month,
+    emp: gv('ps-emp'), empid: gv('ps-empid'), desig: gv('ps-desig'), dept: gv('ps-dept'),
+    office: gv('ps-office'), emptype: gv('ps-emptype'), bank: gv('ps-bank'), pan: gv('ps-pan'),
+    dailyhrs: g('ps-dailyhrs'), totaldays: g('ps-totaldays'), presentdays: g('ps-presentdays'),
+    salarydays: g('ps-salarydays'), leave: g('ps-leave'), absent: g('ps-absent'),
+    holidays: g('ps-holidays'), otHrs: g('ps-ot-hrs'), alloweddays: g('ps-alloweddays'),
+    basic: g('ps-basic'), da: g('ps-da'), ssfContrib: g('ps-ssf-contrib'), night: g('ps-night'),
+    sat: g('ps-sat'), otPay: g('ps-ot-pay'), leavepay: g('ps-leavepay'), otherincome: g('ps-otherincome'),
+    ssfDed: g('ps-ssf-ded'), loss: g('ps-loss'), lunch: g('ps-lunch'), tds: g('ps-tds'), otherded: g('ps-otherded'),
+    gross: calc.gross, totalDed: calc.totalDed, net: calc.net
+  };
+  var existing = state.payslips.findIndex(function(p){ return p.year===year&&p.month===month; });
+  if(existing>=0){
+    if(!confirm('A payslip for '+BS_MONTHS[month-1]+' '+year+' already exists. Replace it?')) return;
+    state.payslips[existing]=slip;
+  } else { state.payslips.push(slip); }
+  save(); renderPayslips();
+  var clearIds=['ps-basic','ps-da','ps-ssf-contrib','ps-night','ps-sat','ps-ot-pay','ps-leavepay','ps-otherincome','ps-ssf-ded','ps-loss','ps-lunch','ps-tds','ps-otherded'];
+  clearIds.forEach(function(id){ document.getElementById(id).value=''; });
+  psCalcNet();
+}
+
+function deletePayslip(id) {
+  if(!confirm('Delete this payslip?')) return;
+  state.payslips=state.payslips.filter(function(p){ return p.id!==id; });
+  save(); renderPayslips();
+}
+
+function renderPayslips() {
+  var el = document.getElementById('payslips-list');
+  if(!state.payslips.length){
+    el.innerHTML='<div style="text-align:center;color:var(--text3);padding:24px;font-size:13px">No payslips stored yet. Fill in the form above to add your first one.</div>';
+    return;
+  }
+  var sorted = state.payslips.slice().sort(function(a,b){ return b.year!==a.year?b.year-a.year:b.month-a.month; });
+  var html='<table class="data-table"><thead><tr><th>Period</th><th>Employee</th><th>Gross</th><th>Deductions</th><th>OT Pay</th><th>OT Hrs</th><th>Net (Cash in Hand)</th><th></th></tr></thead><tbody>';
+  sorted.forEach(function(p){
+    var period=BS_MONTHS[p.month-1]+' '+p.year;
+    html+='<tr>'
+      +'<td style="font-weight:500">'+period+'</td>'
+      +'<td style="font-size:12px">'+(p.emp||'—')+(p.empid?' <span style="color:var(--text3)">('+p.empid+')</span>':'')+'</td>'
+      +'<td>NPR '+p.gross.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})+'</td>'
+      +'<td style="color:var(--red)">NPR '+p.totalDed.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})+'</td>'
+      +'<td style="color:var(--accent)">NPR '+p.otPay.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})+'</td>'
+      +'<td class="mono">'+(p.otHrs||0)+'h</td>'
+      +'<td style="font-weight:500;color:var(--green)">NPR '+p.net.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})+'</td>'
+      +'<td style="display:flex;gap:4px">'
+      +'<button class="btn sm" onclick="printPayslip('+p.id+')">Print</button>'
+      +'<button class="btn sm danger" onclick="deletePayslip('+p.id+')">×</button>'
+      +'</td></tr>';
+  });
+  html+='</tbody></table>';
+  var totalNet=sorted.reduce(function(s,p){return s+p.net;},0);
+  var totalOT=sorted.reduce(function(s,p){return s+p.otPay;},0);
+  html+='<div style="display:flex;gap:24px;padding:12px 0 0;border-top:1px solid var(--border);margin-top:4px">'
+    +'<span style="font-size:12px;color:var(--text2)">Total net: <strong style="color:var(--green)">NPR '+totalNet.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong></span>'
+    +'<span style="font-size:12px;color:var(--text2)">Total OT pay: <strong style="color:var(--accent)">NPR '+totalOT.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong></span>'
+    +'<span style="font-size:12px;color:var(--text2)">Records: <strong>'+sorted.length+'</strong></span>'
+    +'</div>';
+  el.innerHTML=html;
+}
+
+function nf(v){ return (v||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+function printPayslip(id) {
+  var p=state.payslips.find(function(x){return x.id===id;});
+  if(!p) return;
+  var period=BS_MONTHS[p.month-1]+' '+p.year;
+  var w=window.open('','_blank');
+  var h='<html><head><title>Payslip — '+period+'</title><style>'
+    +'*{box-sizing:border-box;margin:0;padding:0}'
+    +'body{font-family:Arial,sans-serif;font-size:12px;padding:20px;color:#111}'
+    +'.header{text-align:center;border:1px solid #ccc;padding:10px;margin-bottom:0}'
+    +'.header h1{font-size:16px;font-weight:700;margin-bottom:2px}'
+    +'.header p{font-size:11px;color:#555}'
+    +'.title{text-align:center;font-size:14px;font-weight:700;padding:8px;border:1px solid #ccc;border-top:none;margin-bottom:0}'
+    +'.info-grid{display:grid;grid-template-columns:1fr 1fr;border:1px solid #ccc;border-top:none}'
+    +'.info-row{display:flex;padding:4px 8px;border-bottom:1px solid #eee}'
+    +'.info-label{font-weight:700;min-width:110px;font-size:11px}'
+    +'.info-val{font-size:11px;color:#333}'
+    +'.days-grid{display:grid;grid-template-columns:repeat(6,1fr);border:1px solid #ccc;border-top:none}'
+    +'.day-cell{padding:4px 8px;border-right:1px solid #eee;border-bottom:1px solid #eee}'
+    +'.day-cell .lbl{font-size:10px;font-weight:700}.day-cell .val{font-size:11px}'
+    +'table{width:100%;border-collapse:collapse;border:1px solid #ccc;border-top:none}'
+    +'th,td{padding:5px 8px;font-size:11px;text-align:left;border-bottom:1px solid #eee}'
+    +'th{font-weight:700;background:#f5f5f5}'
+    +'td.right{text-align:right}'
+    +'.section-head{font-weight:700;background:#eee;padding:5px 8px;font-size:11px}'
+    +'.total-row td{font-weight:700;border-top:2px solid #333;background:#fafafa}'
+    +'.net-row td{font-weight:700;font-size:13px;background:#e8f4ea;color:#1a5c2a}'
+    +'.sigs{display:flex;justify-content:space-between;margin-top:24px;padding-top:16px;border-top:1px solid #ddd}'
+    +'.sig{text-align:center;font-size:10px;color:#555}'
+    +'.sig div{border-top:1px solid #333;margin-top:24px;padding-top:4px}'
+    +'</style></head><body>'
+    +'<div class="header"><h1>Foodmandu Pvt. Ltd.</h1><p>Kathmandu, Kathmandu</p></div>'
+    +'<div class="title">Salary PaySlip for the Month of '+period+'</div>'
+    +'<div class="info-grid">'
+    +'<div><div class="info-row"><span class="info-label">Employee:</span><span class="info-val">'+(p.emp||'—')+(p.empid?' ('+p.empid+')':'')+'</span></div>'
+    +'<div class="info-row"><span class="info-label">Office:</span><span class="info-val">'+(p.office||'—')+'</span></div>'
+    +'<div class="info-row"><span class="info-label">Department:</span><span class="info-val">'+(p.dept||'—')+'</span></div>'
+    +'<div class="info-row"><span class="info-label">Designation:</span><span class="info-val">'+(p.desig||'—')+'</span></div>'
+    +'<div class="info-row"><span class="info-label">Bank Account:</span><span class="info-val">'+(p.bank||'—')+'</span></div>'
+    +'<div class="info-row"><span class="info-label">Daily hour:</span><span class="info-val">'+(p.dailyhrs||9)+'</span></div></div>'
+    +'<div><div class="info-row"><span class="info-label">PF No:</span><span class="info-val">—</span></div>'
+    +'<div class="info-row"><span class="info-label">Employment:</span><span class="info-val">'+(p.emptype||'Contract')+'</span></div>'
+    +'<div class="info-row"><span class="info-label">PAN No:</span><span class="info-val">'+(p.pan||'—')+'</span></div>'
+    +'<div class="info-row"><span class="info-label">CIT No:</span><span class="info-val">—</span></div>'
+    +'<div class="info-row"><span class="info-label">SSF No:</span><span class="info-val">—</span></div></div>'
+    +'</div>'
+    +'<div class="days-grid">'
+    +'<div class="day-cell"><div class="lbl">Holidays</div><div class="val">'+(p.holidays||0)+'</div></div>'
+    +'<div class="day-cell"><div class="lbl">Leave</div><div class="val">'+(p.leave||0)+'</div></div>'
+    +'<div class="day-cell"><div class="lbl">Absent</div><div class="val">'+(p.absent||0)+'</div></div>'
+    +'<div class="day-cell"><div class="lbl">Present Days</div><div class="val">'+(p.presentdays||0)+'</div></div>'
+    +'<div class="day-cell"><div class="lbl">OT Hours</div><div class="val">'+(p.otHrs||0)+'</div></div>'
+    +'<div class="day-cell"><div class="lbl">Total Days</div><div class="val">'+(p.totaldays||0)+'</div></div>'
+    +'<div class="day-cell"><div class="lbl">Salary Days</div><div class="val">'+(p.salarydays||0)+'</div></div>'
+    +'<div class="day-cell"><div class="lbl">Allowed Days</div><div class="val">'+(p.alloweddays||0)+'</div></div>'
+    +'</div>'
+    +'<table><thead><tr><th>Title</th><th>Calc</th><th>Base Value</th><th>Rate</th><th class="right">Amount</th></tr></thead><tbody>'
+    +'<tr><td colspan="5" class="section-head">Income</td></tr>'
+    +(p.basic?'<tr><td>Basic Salary</td><td>+</td><td>0.00</td><td>'+nf(p.basic)+'</td><td class="right">'+nf(p.basic)+'</td></tr>':'')
+    +(p.da?'<tr><td>Dearness Allowance</td><td>+</td><td>0.00</td><td>'+nf(p.da)+'</td><td class="right">'+nf(p.da)+'</td></tr>':'')
+    +(p.ssfContrib?'<tr><td>SSF Contribution</td><td>+</td><td>0.00</td><td>'+nf(p.ssfContrib)+'</td><td class="right">'+nf(p.ssfContrib)+'</td></tr>':'')
+    +(p.night?'<tr><td>Night Morning Allowance</td><td>+</td><td>0.00</td><td>'+nf(p.night)+'</td><td class="right">'+nf(p.night)+'</td></tr>':'')
+    +(p.sat?'<tr><td>Saturday Allowance</td><td>+</td><td>0.00</td><td>'+nf(p.sat)+'</td><td class="right">'+nf(p.sat)+'</td></tr>':'')
+    +(p.otPay?'<tr><td>Over Time</td><td>+</td><td>0.00</td><td>'+nf(p.otPay)+'</td><td class="right">'+nf(p.otPay)+'</td></tr>':'')
+    +(p.leavepay?'<tr><td>Leave Payment</td><td>+</td><td>0.00</td><td>'+nf(p.leavepay)+'</td><td class="right">'+nf(p.leavepay)+'</td></tr>':'')
+    +(p.otherincome?'<tr><td>Other Income</td><td>+</td><td>0.00</td><td>'+nf(p.otherincome)+'</td><td class="right">'+nf(p.otherincome)+'</td></tr>':'')
+    +'<tr class="total-row"><td colspan="4"><strong>Gross Salary</strong></td><td class="right"><strong>'+nf(p.gross)+'</strong></td></tr>'
+    +'<tr><td colspan="5" class="section-head">Deductions</td></tr>'
+    +(p.ssfDed?'<tr><td>SSF Deduction</td><td>-</td><td>0.00</td><td>'+nf(p.ssfDed)+'</td><td class="right">'+nf(p.ssfDed)+'</td></tr>':'')
+    +(p.loss?'<tr><td>Loss order deduction</td><td>-</td><td>0.00</td><td>'+nf(p.loss)+'</td><td class="right">'+nf(p.loss)+'</td></tr>':'')
+    +(p.lunch?'<tr><td>Lunch Deduction</td><td>-</td><td>0.00</td><td>'+nf(p.lunch)+'</td><td class="right">'+nf(p.lunch)+'</td></tr>':'')
+    +(p.tds?'<tr><td>TDS</td><td>-</td><td>0.00</td><td>'+nf(p.tds)+'</td><td class="right">'+nf(p.tds)+'</td></tr>':'')
+    +(p.otherded?'<tr><td>Other Deductions</td><td>-</td><td>0.00</td><td>'+nf(p.otherded)+'</td><td class="right">'+nf(p.otherded)+'</td></tr>':'')
+    +'<tr class="total-row"><td colspan="4"><strong>Total Deduction</strong></td><td class="right"><strong>'+nf(p.totalDed)+'</strong></td></tr>'
+    +'<tr class="net-row"><td colspan="4"><strong>Net Salary (Cash in Hand)</strong></td><td class="right"><strong>'+nf(p.net)+'</strong></td></tr>'
+    +'</tbody></table>'
+    +'<div class="sigs"><div class="sig"><div>Received By</div></div><div class="sig"><div>Checked By</div></div><div class="sig"><div>Prepared By</div></div></div>'
+    +'<p style="margin-top:16px;font-size:10px;color:#999">This is an auto generated electronic salary slip and does not bear any signature</p>'
+    +'</body></html>';
+  w.document.write(h); w.document.close(); w.print();
+}
+
+function exportPayslipsCSV() {
+  var rows=[['Period','Employee','BS Month','BS Year','Basic','DA','SSF Contrib','Night Allow','Sat Allow','OT Pay','Leave Pay','Other Income','Gross','SSF Ded','Loss Ded','Lunch Ded','TDS','Other Ded','Total Ded','Net Pay','OT Hours']];
+  state.payslips.slice().sort(function(a,b){return b.year!==a.year?b.year-a.year:b.month-a.month;}).forEach(function(p){
+    rows.push([BS_MONTHS[p.month-1]+' '+p.year,p.emp||'',BS_MONTHS[p.month-1],p.year,p.basic,p.da,p.ssfContrib,p.night,p.sat,p.otPay,p.leavepay,p.otherincome,p.gross,p.ssfDed,p.loss,p.lunch,p.tds,p.otherded,p.totalDed,p.net,p.otHrs||0]);
+  });
+  var csv=rows.map(function(r){return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var blob=new Blob([csv],{type:'text/csv'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='payslips.csv';a.click();
+}
+
+load();
+recomputeApprovedOT();
+setInterval(updateClock, 1000);
+updateClock();
+renderDashboard();
+updatePendingBadge();
+document.getElementById('log-date').value = new Date().toISOString().slice(0,10);
+document.getElementById('req-date').value = new Date().toISOString().slice(0,10);
+var psYear = document.getElementById('ps-year');
+var psMonth = document.getElementById('ps-month');
+if(psYear && psMonth){
+  var todayBS = adToBS(new Date().toISOString().slice(0,10));
+  if(todayBS){ psYear.value=todayBS.y; psMonth.value=todayBS.m; }
+}
+
+/* ── Daily 11:20 PM reminder ── */
+function scheduleNightReminder() {
+  var now = new Date();
+  var target = new Date();
+  target.setHours(23, 20, 0, 0);
+  // if 11:20 already passed today, schedule for tomorrow
+  if(now >= target) target.setDate(target.getDate() + 1);
+  var delay = target - now;
+  setTimeout(function() {
+    fireNightReminder();
+    // reschedule every 24h after first fire
+    setInterval(fireNightReminder, 24 * 60 * 60 * 1000);
+  }, delay);
+}
+
+function fireNightReminder() {
+  var today = new Date().toISOString().slice(0,10);
+  var todayEntries = state.entries.filter(function(e){ return e.date === today; });
+  var checkedIn = !!state.checkinTime;
+  var hasEntry  = todayEntries.length > 0;
+
+  var body = checkedIn
+    ? 'You are still checked in! Don\'t forget to check out.'
+    : hasEntry
+      ? 'You have ' + todayEntries.length + ' entr' + (todayEntries.length>1?'ies':'y') + ' today. Review your OT log.'
+      : 'No check-in recorded today. Open the app to review.';
+
+  if(Notification.permission === 'granted') {
+    new Notification('OT Tracker — Daily Check', {
+      body: body,
+      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="%23C17D3C"/><text x="16" y="22" font-size="18" text-anchor="middle" fill="white">⏱</text></svg>',
+      tag: 'ot-reminder',    // replaces previous if still showing
+      requireInteraction: false
+    });
+  } else {
+    // fallback: in-app toast if notifications not granted
+    showInAppToast('11:20 PM reminder — ' + body);
+  }
+}
+
+function showInAppToast(msg) {
+  var existing = document.getElementById('ot-toast');
+  if(existing) existing.remove();
+  var toast = document.createElement('div');
+  toast.id = 'ot-toast';
+  toast.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9998;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:14px 18px;box-shadow:0 4px 24px rgba(0,0,0,.14);max-width:320px;font-size:13px;color:var(--text);display:flex;align-items:flex-start;gap:12px';
+  toast.innerHTML = '<span style="font-size:20px;line-height:1">⏱</span>'
+    +'<div style="flex:1"><div style="font-weight:500;margin-bottom:3px">OT Tracker Reminder</div>'
+    +'<div style="color:var(--text2);font-size:12px">'+msg+'</div></div>'
+    +'<button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;padding:0;line-height:1">×</button>';
+  document.body.appendChild(toast);
+  setTimeout(function(){ if(toast.parentElement) toast.remove(); }, 10000);
+}
+
+// Request notification permission and start scheduler
+if('Notification' in window) {
+  if(Notification.permission === 'default') {
+    // show a friendly prompt first rather than hitting them cold
+    setTimeout(function() {
+      showInAppToast('Allow notifications to get a daily 11:20 PM reminder to check your OT log.');
+      var toast = document.getElementById('ot-toast');
+      if(toast) {
+        var btn = document.createElement('button');
+        btn.className = 'btn sm primary';
+        btn.style.cssText = 'margin-top:8px;width:100%';
+        btn.textContent = 'Enable reminders';
+        btn.onclick = function() {
+          Notification.requestPermission().then(function(p) {
+            toast.remove();
+            if(p === 'granted') showInAppToast('Reminders enabled! You\'ll be notified at 11:20 PM daily.');
+          });
+        };
+        toast.querySelector('div > div:last-child').after(btn);
+      }
+    }, 2000);
+  }
+  scheduleNightReminder();
+}
+// Register Service Worker for offline PWA support
+if('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('./sw.js').then(function(reg) {
+      console.log('SW registered:', reg.scope);
+    }).catch(function(err) {
+      console.log('SW registration failed:', err);
+    });
+  });
+}
+</script>
+</body>
+</html>
